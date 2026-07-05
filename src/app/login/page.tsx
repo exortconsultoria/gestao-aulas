@@ -36,7 +36,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-2 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-contrast card-shadow">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-accent text-foreground card-shadow">
             <GraduationCap size={26} strokeWidth={2.25} />
           </div>
           <h1 className="text-xl font-semibold text-foreground">Gestão de Aulas</h1>

@@ -8,9 +8,14 @@
   --muted: #5b6b62;
   --border: #e2e6e2;
 
-  --primary: #1f7a4d;
-  --primary-dark: #145c39;
-  --primary-light: #e3f5ea;
+  /* Verde de referência do usuário (#8da573) é suave demais para texto/botões
+     em branco (baixo contraste), então usamos uma versão mais escura da mesma
+     tonalidade para elementos funcionais, e reservamos o tom exato para
+     destaques decorativos (logo, navegação ativa, quadro Kanban). */
+  --primary: #5b7048;
+  --primary-dark: #46592f;
+  --primary-light: #eef2e8;
+  --primary-accent: #8da573;
   --primary-contrast: #ffffff;
 
   --danger: #c0392b;
@@ -30,6 +35,7 @@
   --color-primary: var(--primary);
   --color-primary-dark: var(--primary-dark);
   --color-primary-light: var(--primary-light);
+  --color-primary-accent: var(--primary-accent);
   --color-primary-contrast: var(--primary-contrast);
 
   --color-danger: var(--danger);

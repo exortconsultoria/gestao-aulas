@@ -28,7 +28,7 @@ type AulaComAluno = {
 }
 
 const colunas: { status: StatusAula; titulo: string; corBarra: string }[] = [
-  { status: 'agendada', titulo: 'Agendada', corBarra: 'bg-primary' },
+  { status: 'agendada', titulo: 'Agendada', corBarra: 'bg-primary-accent' },
   { status: 'realizada', titulo: 'Realizada', corBarra: 'bg-muted' },
   { status: 'cancelada', titulo: 'Cancelada', corBarra: 'bg-danger' },
   { status: 'falta', titulo: 'Falta', corBarra: 'bg-danger' },

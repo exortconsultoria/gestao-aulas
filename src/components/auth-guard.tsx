@@ -22,7 +22,7 @@ function NavLink({ href, label, icon: Icon }: (typeof navItems)[number]) {
       href={href}
       className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
         ativo
-          ? 'bg-primary text-primary-contrast'
+          ? 'bg-primary-accent text-foreground'
           : 'text-foreground/70 hover:bg-surface-muted hover:text-foreground'
       }`}
     >
