@@ -6,8 +6,8 @@ import { criarAluno, type CriarAlunoState } from './actions'
 const initialState: CriarAlunoState = { submissionId: 0 }
 
 const inputClass =
-  'w-full rounded-md border border-black/15 bg-transparent px-3 py-2 text-sm outline-none focus:border-black/40 dark:border-white/20 dark:focus:border-white/40'
-const labelClass = 'text-sm font-medium'
+  'w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary-light'
+const labelClass = 'text-sm font-medium text-foreground'
 
 function TipoCobrancaFields() {
   const [tipoCobranca, setTipoCobranca] = useState<'por_aula' | 'mensalista'>('por_aula')
@@ -16,7 +16,7 @@ function TipoCobrancaFields() {
     <>
       <fieldset className="flex flex-col gap-2">
         <legend className={labelClass}>Tipo de cobrança</legend>
-        <div className="flex gap-4 text-sm">
+        <div className="flex gap-4 text-sm text-foreground">
           <label className="flex items-center gap-2">
             <input
               type="radio"
@@ -24,6 +24,7 @@ function TipoCobrancaFields() {
               value="por_aula"
               checked={tipoCobranca === 'por_aula'}
               onChange={() => setTipoCobranca('por_aula')}
+              className="accent-primary"
             />
             Por aula
           </label>
@@ -34,6 +35,7 @@ function TipoCobrancaFields() {
               value="mensalista"
               checked={tipoCobranca === 'mensalista'}
               onChange={() => setTipoCobranca('mensalista')}
+              className="accent-primary"
             />
             Mensalista
           </label>
@@ -144,12 +146,10 @@ export function AlunoForm() {
       </div>
 
       {state.error && (
-        <p className="rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-400">
-          {state.error}
-        </p>
+        <p className="rounded-lg bg-danger-light px-3 py-2 text-sm text-danger">{state.error}</p>
       )}
       {state.success && (
-        <p className="rounded-md bg-green-500/10 px-3 py-2 text-sm text-green-700 dark:text-green-400">
+        <p className="rounded-lg bg-primary-light px-3 py-2 text-sm text-primary-dark">
           Aluno cadastrado com sucesso!
         </p>
       )}
@@ -157,7 +157,7 @@ export function AlunoForm() {
       <button
         type="submit"
         disabled={pending}
-        className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-50"
+        className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-contrast transition-colors hover:bg-primary-dark disabled:opacity-50"
       >
         {pending ? 'Salvando...' : 'Cadastrar aluno'}
       </button>

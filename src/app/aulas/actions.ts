@@ -38,3 +38,10 @@ export async function criarAula(
 
   return { success: true, submissionId: prevState.submissionId + 1 }
 }
+
+export type StatusAula = 'agendada' | 'realizada' | 'cancelada' | 'falta'
+
+export async function atualizarStatusAula(id: string, status: StatusAula) {
+  const supabase = createClient()
+  return supabase.from('aulas').update({ status }).eq('id', id)
+}

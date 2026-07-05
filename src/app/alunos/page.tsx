@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { UserPlus, Mail, Phone } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { AuthGuard } from '@/components/auth-guard'
+import { ValorMonetario } from '@/components/valor-monetario'
 
 type Aluno = {
   id: string
@@ -15,7 +18,7 @@ type Aluno = {
   ativo: boolean
 }
 
-export default function AlunosPage() {
+function AlunosContent() {
   const [alunos, setAlunos] = useState<Aluno[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -32,72 +35,88 @@ export default function AlunosPage() {
   }, [])
 
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-12">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Alunos</h1>
-        <div className="flex gap-3">
-          <Link href="/aulas" className="text-sm underline self-center">
-            Agenda
-          </Link>
-          <Link
-            href="/alunos/novo"
-            className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background"
-          >
-            Cadastrar aluno
-          </Link>
+    <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-10">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Alunos</h1>
+          <p className="mt-1 text-sm text-muted">Todos os alunos cadastrados na plataforma.</p>
         </div>
+        <Link
+          href="/alunos/novo"
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-contrast transition-colors hover:bg-primary-dark"
+        >
+          <UserPlus size={16} />
+          Cadastrar aluno
+        </Link>
       </div>
 
       {error && (
-        <p className="rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-400">
+        <p className="rounded-lg bg-danger-light px-3 py-2 text-sm text-danger">
           Erro ao carregar alunos: {error}
         </p>
       )}
 
-      {!error && alunos === null && (
-        <p className="text-sm text-black/60 dark:text-white/60">Carregando...</p>
-      )}
+      {!error && alunos === null && <p className="text-sm text-muted">Carregando...</p>}
 
       {!error && alunos?.length === 0 && (
-        <p className="text-sm text-black/60 dark:text-white/60">
-          Nenhum aluno cadastrado ainda.
-        </p>
+        <div className="card-shadow rounded-2xl border border-dashed border-border bg-surface p-8 text-center">
+          <p className="text-sm text-muted">Nenhum aluno cadastrado ainda.</p>
+        </div>
       )}
 
-      <ul className="flex flex-col gap-2">
+      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {alunos?.map((aluno) => {
-          const valor =
-            aluno.tipo_cobranca === 'mensalista'
-              ? aluno.valor_mensalidade != null
-                ? `R$ ${Number(aluno.valor_mensalidade).toFixed(2)} / mês`
-                : 'Mensalista (sem valor definido)'
-              : aluno.valor_hora != null
-                ? `R$ ${Number(aluno.valor_hora).toFixed(2)} / aula`
-                : 'Por aula (sem valor definido)'
+          const cobranca =
+            aluno.tipo_cobranca === 'mensalista' ? (
+              aluno.valor_mensalidade != null ? (
+                <ValorMonetario valor={Number(aluno.valor_mensalidade)} sufixo=" / mês" />
+              ) : (
+                'Mensalista (sem valor definido)'
+              )
+            ) : aluno.valor_hora != null ? (
+              <ValorMonetario valor={Number(aluno.valor_hora)} sufixo=" / aula" />
+            ) : (
+              'Por aula (sem valor definido)'
+            )
 
           return (
             <li
               key={aluno.id}
-              className="flex flex-col gap-1 rounded-md border border-black/10 px-4 py-3 dark:border-white/15"
+              className="card-shadow card-shadow-hover flex flex-col gap-2 rounded-2xl border border-border bg-surface p-5"
             >
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{aluno.nome}</span>
+              <div className="flex items-start justify-between">
+                <span className="font-semibold text-foreground">{aluno.nome}</span>
                 {!aluno.ativo && (
-                  <span className="rounded-full bg-black/10 px-2 py-0.5 text-xs dark:bg-white/10">
+                  <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs text-muted">
                     Inativo
                   </span>
                 )}
               </div>
-              <span className="text-sm text-black/60 dark:text-white/60">{valor}</span>
-              {(aluno.email || aluno.telefone) && (
-                <span className="text-sm text-black/60 dark:text-white/60">
-                  {[aluno.email, aluno.telefone].filter(Boolean).join(' · ')}
-                </span>
-              )}
+              <span className="text-sm font-medium text-primary">{cobranca}</span>
+              <div className="flex flex-col gap-1 border-t border-border pt-2 text-xs text-muted">
+                {aluno.email && (
+                  <span className="flex items-center gap-1.5">
+                    <Mail size={12} /> {aluno.email}
+                  </span>
+                )}
+                {aluno.telefone && (
+                  <span className="flex items-center gap-1.5">
+                    <Phone size={12} /> {aluno.telefone}
+                  </span>
+                )}
+              </div>
             </li>
           )
         })}
       </ul>
     </main>
+  )
+}
+
+export default function AlunosPage() {
+  return (
+    <AuthGuard>
+      <AlunosContent />
+    </AuthGuard>
   )
 }
