@@ -1,12 +1,35 @@
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+'use client'
 
-export default async function AlunosPage() {
-  const supabase = await createClient()
-  const { data: alunos, error } = await supabase
-    .from('alunos')
-    .select('id, nome, email, telefone, tipo_cobranca, valor_mensalidade, valor_hora, ativo')
-    .order('nome')
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
+
+type Aluno = {
+  id: string
+  nome: string
+  email: string | null
+  telefone: string | null
+  tipo_cobranca: string
+  valor_mensalidade: number | null
+  valor_hora: number | null
+  ativo: boolean
+}
+
+export default function AlunosPage() {
+  const [alunos, setAlunos] = useState<Aluno[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from('alunos')
+      .select('id, nome, email, telefone, tipo_cobranca, valor_mensalidade, valor_hora, ativo')
+      .order('nome')
+      .then(({ data, error }) => {
+        if (error) setError(error.message)
+        else setAlunos(data)
+      })
+  }, [])
 
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-12">
@@ -27,8 +50,12 @@ export default async function AlunosPage() {
 
       {error && (
         <p className="rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-400">
-          Erro ao carregar alunos: {error.message}
+          Erro ao carregar alunos: {error}
         </p>
+      )}
+
+      {!error && alunos === null && (
+        <p className="text-sm text-black/60 dark:text-white/60">Carregando...</p>
       )}
 
       {!error && alunos?.length === 0 && (

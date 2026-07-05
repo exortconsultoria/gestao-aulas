@@ -1,5 +1,8 @@
+'use client'
+
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import { AulaForm } from './aula-form'
 
 const statusLabel: Record<string, string> = {
@@ -14,6 +17,8 @@ function formatarData(data: string) {
   return `${dia}/${mes}/${ano}`
 }
 
+type Aluno = { id: string; nome: string }
+
 type AulaComAluno = {
   id: string
   data: string
@@ -26,21 +31,38 @@ type AulaComAluno = {
   aluno: { nome: string } | null
 }
 
-export default async function AulasPage() {
-  const supabase = await createClient()
+export default function AulasPage() {
+  const [alunos, setAlunos] = useState<Aluno[] | null>(null)
+  const [erroAlunos, setErroAlunos] = useState<string | null>(null)
+  const [aulas, setAulas] = useState<AulaComAluno[] | null>(null)
+  const [erroAulas, setErroAulas] = useState<string | null>(null)
 
-  const [{ data: alunos, error: erroAlunos }, { data: aulas, error: erroAulas }] =
-    await Promise.all([
-      supabase.from('alunos').select('id, nome').eq('ativo', true).order('nome'),
-      supabase
-        .from('aulas')
-        .select('id, data, hora_inicio, hora_fim, status, valor, aluno:alunos(nome)')
-        .order('data')
-        .order('hora_inicio') as unknown as Promise<{
-        data: AulaComAluno[] | null
-        error: { message: string } | null
-      }>,
-    ])
+  const fetchAulas = useCallback(() => {
+    const supabase = createClient()
+    supabase
+      .from('aulas')
+      .select('id, data, hora_inicio, hora_fim, status, valor, aluno:alunos(nome)')
+      .order('data')
+      .order('hora_inicio')
+      .then(({ data, error }) => {
+        if (error) setErroAulas(error.message)
+        else setAulas(data as unknown as AulaComAluno[])
+      })
+  }, [])
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from('alunos')
+      .select('id, nome')
+      .eq('ativo', true)
+      .order('nome')
+      .then(({ data, error }) => {
+        if (error) setErroAlunos(error.message)
+        else setAlunos(data)
+      })
+    fetchAulas()
+  }, [fetchAulas])
 
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-8 px-4 py-12">
@@ -55,17 +77,17 @@ export default async function AulasPage() {
         <h2 className="text-sm font-medium text-black/60 dark:text-white/60">Marcar aula</h2>
         {erroAlunos && (
           <p className="rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-400">
-            Erro ao carregar alunos: {erroAlunos.message}
+            Erro ao carregar alunos: {erroAlunos}
           </p>
         )}
-        {!erroAlunos && <AulaForm alunos={alunos ?? []} />}
+        {!erroAlunos && alunos !== null && <AulaForm alunos={alunos} onCreated={fetchAulas} />}
       </section>
 
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-medium text-black/60 dark:text-white/60">Aulas marcadas</h2>
         {erroAulas && (
           <p className="rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-400">
-            Erro ao carregar aulas: {erroAulas.message}
+            Erro ao carregar aulas: {erroAulas}
           </p>
         )}
         {!erroAulas && aulas?.length === 0 && (

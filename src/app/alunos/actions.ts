@@ -1,7 +1,4 @@
-'use server'
-
-import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 
 export type CriarAlunoState = {
   error?: string
@@ -23,7 +20,7 @@ export async function criarAluno(
   const diaVencimento = formData.get('dia_vencimento')?.toString()
   const valorHora = formData.get('valor_hora')?.toString()
 
-  const supabase = await createClient()
+  const supabase = createClient()
   const { error } = await supabase.from('alunos').insert({
     nome,
     email: formData.get('email')?.toString() || null,
@@ -42,6 +39,5 @@ export async function criarAluno(
     return { error: `Erro ao salvar: ${error.message}`, submissionId: prevState.submissionId }
   }
 
-  revalidatePath('/alunos')
   return { success: true, submissionId: prevState.submissionId + 1 }
 }

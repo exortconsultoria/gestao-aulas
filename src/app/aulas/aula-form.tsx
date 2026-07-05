@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef } from 'react'
 import { criarAula, type CriarAulaState } from './actions'
 
-const initialState: CriarAulaState = {}
+const initialState: CriarAulaState = { submissionId: 0 }
 
 const inputClass =
   'w-full rounded-md border border-black/15 bg-transparent px-3 py-2 text-sm outline-none focus:border-black/40 dark:border-white/20 dark:focus:border-white/40'
@@ -11,15 +11,16 @@ const labelClass = 'text-sm font-medium'
 
 type Aluno = { id: string; nome: string }
 
-export function AulaForm({ alunos }: { alunos: Aluno[] }) {
+export function AulaForm({ alunos, onCreated }: { alunos: Aluno[]; onCreated?: () => void }) {
   const [state, formAction, pending] = useActionState(criarAula, initialState)
   const formRef = useRef<HTMLFormElement>(null)
 
   useEffect(() => {
     if (state.success) {
       formRef.current?.reset()
+      onCreated?.()
     }
-  }, [state.success])
+  }, [state.success, onCreated])
 
   if (alunos.length === 0) {
     return (

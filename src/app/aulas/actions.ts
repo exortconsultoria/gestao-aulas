@@ -1,29 +1,28 @@
-'use server'
-
-import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 
 export type CriarAulaState = {
   error?: string
   success?: boolean
+  submissionId: number
 }
 
 export async function criarAula(
-  _prevState: CriarAulaState,
+  prevState: CriarAulaState,
   formData: FormData
 ): Promise<CriarAulaState> {
   const alunoId = formData.get('aluno_id')?.toString()
   const data = formData.get('data')?.toString()
   const horaInicio = formData.get('hora_inicio')?.toString()
 
-  if (!alunoId) return { error: 'Selecione o aluno.' }
-  if (!data) return { error: 'Informe a data da aula.' }
-  if (!horaInicio) return { error: 'Informe o horário de início.' }
+  if (!alunoId) return { error: 'Selecione o aluno.', submissionId: prevState.submissionId }
+  if (!data) return { error: 'Informe a data da aula.', submissionId: prevState.submissionId }
+  if (!horaInicio)
+    return { error: 'Informe o horário de início.', submissionId: prevState.submissionId }
 
   const horaFim = formData.get('hora_fim')?.toString()
   const valor = formData.get('valor')?.toString()
 
-  const supabase = await createClient()
+  const supabase = createClient()
   const { error } = await supabase.from('aulas').insert({
     aluno_id: alunoId,
     data,
@@ -34,9 +33,8 @@ export async function criarAula(
   })
 
   if (error) {
-    return { error: `Erro ao salvar: ${error.message}` }
+    return { error: `Erro ao salvar: ${error.message}`, submissionId: prevState.submissionId }
   }
 
-  revalidatePath('/aulas')
-  return { success: true }
+  return { success: true, submissionId: prevState.submissionId + 1 }
 }
