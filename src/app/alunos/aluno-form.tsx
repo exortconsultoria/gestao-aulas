@@ -3,60 +3,17 @@
 import { useActionState, useEffect, useRef, useState } from 'react'
 import { criarAluno, type CriarAlunoState } from './actions'
 
-const initialState: CriarAlunoState = {}
+const initialState: CriarAlunoState = { submissionId: 0 }
 
 const inputClass =
   'w-full rounded-md border border-black/15 bg-transparent px-3 py-2 text-sm outline-none focus:border-black/40 dark:border-white/20 dark:focus:border-white/40'
 const labelClass = 'text-sm font-medium'
 
-export function AlunoForm() {
-  const [state, formAction, pending] = useActionState(criarAluno, initialState)
-  const formRef = useRef<HTMLFormElement>(null)
+function TipoCobrancaFields() {
   const [tipoCobranca, setTipoCobranca] = useState<'por_aula' | 'mensalista'>('por_aula')
 
-  useEffect(() => {
-    if (state.success) {
-      formRef.current?.reset()
-      setTipoCobranca('por_aula')
-    }
-  }, [state.success])
-
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="nome" className={labelClass}>
-          Nome *
-        </label>
-        <input id="nome" name="nome" type="text" required className={inputClass} />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="email" className={labelClass}>
-            E-mail
-          </label>
-          <input id="email" name="email" type="email" className={inputClass} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="telefone" className={labelClass}>
-            Telefone
-          </label>
-          <input id="telefone" name="telefone" type="tel" className={inputClass} />
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="data_nascimento" className={labelClass}>
-          Data de nascimento
-        </label>
-        <input
-          id="data_nascimento"
-          name="data_nascimento"
-          type="date"
-          className={inputClass}
-        />
-      </div>
-
+    <>
       <fieldset className="flex flex-col gap-2">
         <legend className={labelClass}>Tipo de cobrança</legend>
         <div className="flex gap-4 text-sm">
@@ -127,6 +84,57 @@ export function AlunoForm() {
           </div>
         </div>
       )}
+    </>
+  )
+}
+
+export function AlunoForm() {
+  const [state, formAction, pending] = useActionState(criarAluno, initialState)
+  const formRef = useRef<HTMLFormElement>(null)
+
+  useEffect(() => {
+    if (state.success) {
+      formRef.current?.reset()
+    }
+  }, [state.success])
+
+  return (
+    <form ref={formRef} action={formAction} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="nome" className={labelClass}>
+          Nome *
+        </label>
+        <input id="nome" name="nome" type="text" required className={inputClass} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="email" className={labelClass}>
+            E-mail
+          </label>
+          <input id="email" name="email" type="email" className={inputClass} />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="telefone" className={labelClass}>
+            Telefone
+          </label>
+          <input id="telefone" name="telefone" type="tel" className={inputClass} />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="data_nascimento" className={labelClass}>
+          Data de nascimento
+        </label>
+        <input
+          id="data_nascimento"
+          name="data_nascimento"
+          type="date"
+          className={inputClass}
+        />
+      </div>
+
+      <TipoCobrancaFields key={state.submissionId} />
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="observacoes" className={labelClass}>

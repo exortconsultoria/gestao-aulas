@@ -1,19 +1,21 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 
 export type CriarAlunoState = {
   error?: string
   success?: boolean
+  submissionId: number
 }
 
 export async function criarAluno(
-  _prevState: CriarAlunoState,
+  prevState: CriarAlunoState,
   formData: FormData
 ): Promise<CriarAlunoState> {
   const nome = formData.get('nome')?.toString().trim()
   if (!nome) {
-    return { error: 'Informe o nome do aluno.' }
+    return { error: 'Informe o nome do aluno.', submissionId: prevState.submissionId }
   }
 
   const tipoCobranca = formData.get('tipo_cobranca')?.toString() ?? 'por_aula'
@@ -37,8 +39,9 @@ export async function criarAluno(
   })
 
   if (error) {
-    return { error: `Erro ao salvar: ${error.message}` }
+    return { error: `Erro ao salvar: ${error.message}`, submissionId: prevState.submissionId }
   }
 
-  return { success: true }
+  revalidatePath('/alunos')
+  return { success: true, submissionId: prevState.submissionId + 1 }
 }
