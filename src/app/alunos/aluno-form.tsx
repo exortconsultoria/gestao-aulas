@@ -43,19 +43,9 @@ function TipoCobrancaFields() {
       </fieldset>
 
       {tipoCobranca === 'por_aula' ? (
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="valor_hora" className={labelClass}>
-            Valor por aula (R$)
-          </label>
-          <input
-            id="valor_hora"
-            name="valor_hora"
-            type="number"
-            step="0.01"
-            min="0"
-            className={inputClass}
-          />
-        </div>
+        <p className="text-sm text-muted">
+          O valor de cada aula é definido na hora de marcá-la, na Agenda.
+        </p>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">

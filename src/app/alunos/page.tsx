@@ -73,10 +73,8 @@ function AlunosContent() {
               ) : (
                 'Mensalista (sem valor definido)'
               )
-            ) : aluno.valor_hora != null ? (
-              <ValorMonetario valor={Number(aluno.valor_hora)} sufixo=" / aula" />
             ) : (
-              'Por aula (sem valor definido)'
+              'Cobrança por aula'
             )
 
           return (

@@ -9,9 +9,15 @@ const inputClass =
   'w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary-light'
 const labelClass = 'text-sm font-medium text-foreground'
 
+// Supabase Auth exige e-mail internamente. Como o app é de uso individual,
+// mapeamos o nome de usuário digitado para o e-mail real da conta aqui.
+const EMAIL_POR_USUARIO: Record<string, string> = {
+  sophia: 'sophia.egito@gmail.com',
+}
+
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
+  const [usuario, setUsuario] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState<string | null>(null)
   const [carregando, setCarregando] = useState(false)
@@ -19,14 +25,20 @@ export default function LoginPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setErro(null)
-    setCarregando(true)
 
+    const email = EMAIL_POR_USUARIO[usuario.trim().toLowerCase()]
+    if (!email) {
+      setErro('Usuário ou senha incorretos.')
+      return
+    }
+
+    setCarregando(true)
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
 
     setCarregando(false)
     if (error) {
-      setErro('E-mail ou senha incorretos.')
+      setErro('Usuário ou senha incorretos.')
       return
     }
     router.replace('/')
@@ -48,16 +60,16 @@ export default function LoginPage() {
           className="card-shadow flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6"
         >
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="email" className={labelClass}>
-              E-mail
+            <label htmlFor="usuario" className={labelClass}>
+              Usuário
             </label>
             <input
-              id="email"
-              type="email"
+              id="usuario"
+              type="text"
               required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="username"
+              value={usuario}
+              onChange={(e) => setUsuario(e.target.value)}
               className={inputClass}
             />
           </div>

@@ -57,7 +57,10 @@ function DashboardContent() {
 
     supabase.auth.getSession().then(({ data }) => {
       const email = data.session?.user.email ?? ''
-      setNomeUsuario(email.split('@')[0] ?? '')
+      const primeiroNome = email.split(/[.@]/)[0] ?? ''
+      setNomeUsuario(
+        primeiroNome ? primeiroNome.charAt(0).toUpperCase() + primeiroNome.slice(1) : ''
+      )
     })
 
     supabase

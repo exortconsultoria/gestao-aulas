@@ -18,7 +18,6 @@ export async function criarAluno(
   const tipoCobranca = formData.get('tipo_cobranca')?.toString() ?? 'por_aula'
   const valorMensalidade = formData.get('valor_mensalidade')?.toString()
   const diaVencimento = formData.get('dia_vencimento')?.toString()
-  const valorHora = formData.get('valor_hora')?.toString()
 
   const supabase = createClient()
   const { error } = await supabase.from('alunos').insert({
@@ -31,7 +30,9 @@ export async function criarAluno(
       tipoCobranca === 'mensalista' && valorMensalidade ? Number(valorMensalidade) : null,
     dia_vencimento:
       tipoCobranca === 'mensalista' && diaVencimento ? Number(diaVencimento) : null,
-    valor_hora: tipoCobranca === 'por_aula' && valorHora ? Number(valorHora) : null,
+    // valor_hora não é mais coletado no cadastro — o valor de cada aula é
+    // definido individualmente ao marcá-la (tabela `aulas`, campo `valor`).
+    valor_hora: null,
     observacoes: formData.get('observacoes')?.toString() || null,
   })
 
