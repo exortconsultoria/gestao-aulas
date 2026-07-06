@@ -45,3 +45,11 @@ export async function atualizarStatusAula(id: string, status: StatusAula) {
   const supabase = createClient()
   return supabase.from('aulas').update({ status }).eq('id', id)
 }
+
+export async function reagendarAula(
+  id: string,
+  dados: { data: string; hora_inicio: string; hora_fim: string | null }
+) {
+  const supabase = createClient()
+  return supabase.from('aulas').update(dados).eq('id', id)
+}

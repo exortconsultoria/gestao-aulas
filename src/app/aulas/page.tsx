@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   CalendarPlus,
   CalendarDays,
+  CalendarClock,
   List,
   ChevronLeft,
   ChevronRight,
@@ -18,7 +19,7 @@ import { Skeleton } from '@/components/skeleton'
 import { ValorMonetario } from '@/components/valor-monetario'
 import { fmtISO } from '@/components/periodo-selector'
 import { AulaForm } from './aula-form'
-import { atualizarStatusAula, type StatusAula } from './actions'
+import { atualizarStatusAula, reagendarAula, type StatusAula } from './actions'
 
 type Aluno = { id: string; nome: string }
 
@@ -69,6 +70,92 @@ function nomeDataLonga(data: string) {
 }
 
 const DIAS_SEMANA = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom']
+
+const inputReagendarClass =
+  'rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground outline-none transition-colors focus:border-primary'
+
+function ReagendarForm({
+  aula,
+  onDone,
+  onCancel,
+}: {
+  aula: AulaComAluno
+  onDone: () => void
+  onCancel: () => void
+}) {
+  const [data, setData] = useState(aula.data)
+  const [inicio, setInicio] = useState(aula.hora_inicio.slice(0, 5))
+  const [fim, setFim] = useState(aula.hora_fim?.slice(0, 5) ?? '')
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+
+  async function salvar() {
+    if (!data || !inicio) {
+      setErro('Informe a nova data e o horário de início.')
+      return
+    }
+    setSalvando(true)
+    const { error } = await reagendarAula(aula.id, {
+      data,
+      hora_inicio: inicio,
+      hora_fim: fim || null,
+    })
+    setSalvando(false)
+    if (error) {
+      setErro(`Erro ao reagendar: ${error.message}`)
+      return
+    }
+    onDone()
+  }
+
+  return (
+    <div className="flex w-full flex-col gap-2 rounded-lg border border-border bg-background/60 p-3">
+      <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+        <span className="font-medium text-foreground">Reagendar para:</span>
+        <input
+          type="date"
+          value={data}
+          onChange={(e) => setData(e.target.value)}
+          className={inputReagendarClass}
+        />
+        <input
+          type="time"
+          value={inicio}
+          onChange={(e) => setInicio(e.target.value)}
+          title="Horário de início"
+          className={inputReagendarClass}
+        />
+        <span>até</span>
+        <input
+          type="time"
+          value={fim}
+          onChange={(e) => setFim(e.target.value)}
+          title="Horário de término (opcional)"
+          className={inputReagendarClass}
+        />
+        <div className="ml-auto flex gap-1.5">
+          <button
+            onClick={onCancel}
+            disabled={salvando}
+            className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground disabled:opacity-50"
+          >
+            Voltar
+          </button>
+          <button
+            onClick={salvar}
+            disabled={salvando}
+            className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-contrast transition-colors hover:bg-primary-dark disabled:opacity-50"
+          >
+            {salvando ? 'Salvando...' : 'Confirmar'}
+          </button>
+        </div>
+      </div>
+      {erro && (
+        <p className="rounded-lg bg-danger-light px-3 py-1.5 text-xs text-danger">{erro}</p>
+      )}
+    </div>
+  )
+}
 
 function AcoesStatus({
   aula,
@@ -253,6 +340,66 @@ function CalendarioMensal({
   )
 }
 
+function ItemAula({ aula, onChange }: { aula: AulaComAluno; onChange: () => void }) {
+  const [reagendando, setReagendando] = useState(false)
+
+  return (
+    <li className="card-shadow flex flex-col gap-3 rounded-xl border border-border bg-surface px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-col">
+          <span className="truncate font-medium text-foreground">
+            {aula.aluno?.nome ?? 'Aluno removido'}
+          </span>
+          <span className="text-xs text-muted">
+            {formatarData(aula.data)} · {aula.hora_inicio.slice(0, 5)}
+            {aula.hora_fim ? ` – ${aula.hora_fim.slice(0, 5)}` : ''}
+            {aula.valor != null && (
+              <>
+                {' · '}
+                <ValorMonetario valor={Number(aula.valor)} />
+              </>
+            )}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${badgePorStatus[aula.status]}`}
+          >
+            {statusLabel[aula.status]}
+          </span>
+          <div className="flex gap-1">
+            {aula.status === 'agendada' && (
+              <button
+                onClick={() => setReagendando((v) => !v)}
+                title="Reagendar esta aula"
+                className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs transition-colors ${
+                  reagendando
+                    ? 'bg-primary-light text-primary-dark'
+                    : 'text-muted hover:bg-primary-light hover:text-primary-dark'
+                }`}
+              >
+                <CalendarClock size={13} /> Reagendar
+              </button>
+            )}
+            <AcoesStatus aula={aula} onChange={onChange} />
+          </div>
+        </div>
+      </div>
+
+      {reagendando && (
+        <ReagendarForm
+          aula={aula}
+          onDone={() => {
+            setReagendando(false)
+            onChange()
+          }}
+          onCancel={() => setReagendando(false)}
+        />
+      )}
+    </li>
+  )
+}
+
 function ListaAulas({
   aulas,
   onChange,
@@ -292,36 +439,7 @@ function ListaAulas({
           </h3>
           <ul className="flex flex-col gap-2">
             {grupo.lista.map((aula) => (
-              <li
-                key={aula.id}
-                className="card-shadow flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3"
-              >
-                <div className="flex min-w-0 flex-col">
-                  <span className="truncate font-medium text-foreground">
-                    {aula.aluno?.nome ?? 'Aluno removido'}
-                  </span>
-                  <span className="text-xs text-muted">
-                    {formatarData(aula.data)} · {aula.hora_inicio.slice(0, 5)}
-                    {aula.hora_fim ? ` – ${aula.hora_fim.slice(0, 5)}` : ''}
-                    {aula.valor != null && (
-                      <>
-                        {' · '}
-                        <ValorMonetario valor={Number(aula.valor)} />
-                      </>
-                    )}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${badgePorStatus[aula.status]}`}
-                  >
-                    {statusLabel[aula.status]}
-                  </span>
-                  <div className="flex gap-1">
-                    <AcoesStatus aula={aula} onChange={onChange} />
-                  </div>
-                </div>
-              </li>
+              <ItemAula key={aula.id} aula={aula} onChange={onChange} />
             ))}
           </ul>
         </section>
