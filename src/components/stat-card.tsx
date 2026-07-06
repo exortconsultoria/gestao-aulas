@@ -29,7 +29,9 @@ export function StatCard({
       </div>
       <div className="flex min-w-0 flex-col">
         <span className="text-xs font-medium text-muted">{label}</span>
-        <span className="truncate text-lg font-semibold text-foreground">{value}</span>
+        <span className="truncate text-lg font-semibold tabular-nums text-foreground">
+          {value}
+        </span>
         {hint && <span className="mt-0.5 text-[11px] leading-tight text-muted">{hint}</span>}
       </div>
     </div>

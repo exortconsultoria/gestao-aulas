@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { AuthGuard } from '@/components/auth-guard'
+import { Skeleton } from '@/components/skeleton'
 import { ValorMonetario } from '@/components/valor-monetario'
 import { fmtISO } from '@/components/periodo-selector'
 import { AulaForm } from './aula-form'
@@ -377,14 +378,25 @@ function AulasContent() {
     }
   }
 
+  const subtitulo = useMemo(() => {
+    if (!aulas) return 'Suas aulas organizadas no calendário do mês.'
+    if (visao === 'lista') {
+      if (aulas.length === 0) return 'Nenhuma aula marcada ainda.'
+      return `${aulas.length} ${aulas.length === 1 ? 'aula marcada' : 'aulas marcadas'} no total.`
+    }
+    const chaveMes = `${mesAncora.getFullYear()}-${String(mesAncora.getMonth() + 1).padStart(2, '0')}`
+    const noMes = aulas.filter((a) => a.data.startsWith(chaveMes)).length
+    const nomeMesAtual = mesAncora.toLocaleDateString('pt-BR', { month: 'long' })
+    if (noMes === 0) return `Nenhuma aula em ${nomeMesAtual} — agenda livre.`
+    return `${noMes} ${noMes === 1 ? 'aula' : 'aulas'} em ${nomeMesAtual}.`
+  }, [aulas, visao, mesAncora])
+
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Agenda</h1>
-          <p className="mt-1 text-sm text-muted">
-            Suas aulas organizadas no calendário do mês.
-          </p>
+          <p className="mt-1 text-sm text-muted">{subtitulo}</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="inline-flex rounded-full border border-border bg-surface p-0.5">
@@ -445,7 +457,7 @@ function AulasContent() {
         </p>
       )}
 
-      {aulas === null && !erroAulas && <p className="text-sm text-muted">Carregando...</p>}
+      {aulas === null && !erroAulas && <Skeleton className="h-96" />}
 
       {aulas !== null &&
         (visao === 'calendario' ? (

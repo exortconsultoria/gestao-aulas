@@ -21,6 +21,7 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import { AuthGuard } from '@/components/auth-guard'
 import { StatCard } from '@/components/stat-card'
+import { Skeleton, SkeletonGrid } from '@/components/skeleton'
 import { ValorMonetario } from '@/components/valor-monetario'
 import {
   PeriodoSelector,
@@ -281,7 +282,16 @@ function FinanceiroContent() {
         </p>
       )}
 
-      {!erro && resumo === null && <p className="text-sm text-muted">Carregando...</p>}
+      {!erro && resumo === null && (
+        <>
+          <SkeletonGrid
+            cards={6}
+            cardClassName="h-24"
+            gridClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          />
+          <Skeleton className="h-48" />
+        </>
+      )}
 
       {resumo && (
         <>

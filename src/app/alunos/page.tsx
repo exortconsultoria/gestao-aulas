@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { UserPlus, Mail, Phone, MapPin } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { AuthGuard } from '@/components/auth-guard'
+import { SkeletonGrid } from '@/components/skeleton'
 import { ValorMonetario } from '@/components/valor-monetario'
 
 type Aluno = {
@@ -42,7 +43,13 @@ function AlunosContent() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Alunos</h1>
-          <p className="mt-1 text-sm text-muted">Todos os alunos cadastrados na plataforma.</p>
+          <p className="mt-1 text-sm text-muted">
+            {alunos === null
+              ? 'Todos os alunos cadastrados na plataforma.'
+              : alunos.length === 0
+                ? 'Cadastre seu primeiro aluno para começar.'
+                : `${alunos.length} ${alunos.length === 1 ? 'aluno cadastrado' : 'alunos cadastrados'}, ${alunos.filter((a) => a.ativo).length} em atividade.`}
+          </p>
         </div>
         <Link
           href="/alunos/novo"
@@ -59,7 +66,13 @@ function AlunosContent() {
         </p>
       )}
 
-      {!error && alunos === null && <p className="text-sm text-muted">Carregando...</p>}
+      {!error && alunos === null && (
+        <SkeletonGrid
+          cards={4}
+          cardClassName="h-36"
+          gridClassName="grid grid-cols-1 gap-3 sm:grid-cols-2"
+        />
+      )}
 
       {!error && alunos?.length === 0 && (
         <div className="card-shadow rounded-2xl border border-dashed border-border bg-surface p-8 text-center">

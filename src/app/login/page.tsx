@@ -67,6 +67,7 @@ export default function LoginPage() {
               id="usuario"
               type="text"
               required
+              autoFocus
               autoComplete="username"
               value={usuario}
               onChange={(e) => setUsuario(e.target.value)}

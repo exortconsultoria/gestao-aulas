@@ -13,6 +13,7 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import { AuthGuard } from '@/components/auth-guard'
 import { StatCard } from '@/components/stat-card'
+import { SkeletonGrid } from '@/components/skeleton'
 import { ValorMonetario } from '@/components/valor-monetario'
 import {
   PeriodoSelector,
@@ -236,7 +237,19 @@ function DashboardContent() {
         <h1 className="text-2xl font-semibold text-foreground">Visão geral</h1>
         <p className="mt-1 text-sm text-muted">
           {saudacao()}
-          {nomeUsuario ? `, ${nomeUsuario}` : ''}! Aqui está o retrato do seu negócio.
+          {nomeUsuario ? `, ${nomeUsuario}` : ''}!{' '}
+          {analise ? (
+            analise.marcadas === 0 ? (
+              'Nenhuma aula no período selecionado — que tal marcar a próxima?'
+            ) : (
+              <>
+                Você tem {analise.marcadas} {analise.marcadas === 1 ? 'aula' : 'aulas'} e{' '}
+                <ValorMonetario valor={analise.receitaProjetada} /> projetados no período.
+              </>
+            )
+          ) : (
+            'Aqui está o retrato do seu negócio.'
+          )}
         </p>
       </div>
 
@@ -255,7 +268,20 @@ function DashboardContent() {
         </p>
       )}
 
-      {!erro && analise === null && <p className="text-sm text-muted">Carregando...</p>}
+      {!erro && analise === null && (
+        <>
+          <SkeletonGrid
+            cards={4}
+            cardClassName="h-24"
+            gridClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          />
+          <SkeletonGrid
+            cards={4}
+            cardClassName="h-56"
+            gridClassName="grid grid-cols-1 gap-4 lg:grid-cols-2"
+          />
+        </>
+      )}
 
       {analise && (
         <>
@@ -361,7 +387,9 @@ function DashboardContent() {
                       className="flex items-center justify-between text-sm"
                     >
                       <span className="capitalize text-foreground">{nomeMes(variacao.chave)}</span>
-                      <span className={`flex items-center gap-1.5 font-medium ${cor}`}>
+                      <span
+                        className={`flex items-center gap-1.5 font-medium tabular-nums ${cor}`}
+                      >
                         <Icone size={15} />
                         {variacao.pct == null
                           ? 'sem base'
