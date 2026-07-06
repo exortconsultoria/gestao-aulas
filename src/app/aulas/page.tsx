@@ -1,17 +1,23 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
-import { CalendarPlus, CheckCircle2, XCircle, UserX, Undo2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  CalendarPlus,
+  CalendarDays,
+  List,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  XCircle,
+  UserX,
+  Undo2,
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { AuthGuard } from '@/components/auth-guard'
 import { ValorMonetario } from '@/components/valor-monetario'
+import { fmtISO } from '@/components/periodo-selector'
 import { AulaForm } from './aula-form'
 import { atualizarStatusAula, type StatusAula } from './actions'
-
-function formatarData(data: string) {
-  const [ano, mes, dia] = data.split('-')
-  return `${dia}/${mes}/${ano}`
-}
 
 type Aluno = { id: string; nome: string }
 
@@ -22,19 +28,54 @@ type AulaComAluno = {
   hora_fim: string | null
   status: StatusAula
   valor: number | null
-  // PostgREST retorna objeto (relação N:1), não array — supabase-js sem
-  // tipos gerados infere array por padrão; o shape real em runtime é objeto.
+  // PostgREST retorna objeto (relação N:1); cast manual por falta de tipos gerados.
   aluno: { nome: string } | null
 }
 
-const colunas: { status: StatusAula; titulo: string; corBarra: string }[] = [
-  { status: 'agendada', titulo: 'Agendada', corBarra: 'bg-primary-accent' },
-  { status: 'realizada', titulo: 'Realizada', corBarra: 'bg-muted' },
-  { status: 'cancelada', titulo: 'Cancelada', corBarra: 'bg-danger' },
-  { status: 'falta', titulo: 'Falta', corBarra: 'bg-danger' },
-]
+const statusLabel: Record<StatusAula, string> = {
+  agendada: 'Agendada',
+  realizada: 'Realizada',
+  cancelada: 'Cancelada',
+  falta: 'Falta',
+}
 
-function AulaCard({ aula, onChange }: { aula: AulaComAluno; onChange: () => void }) {
+const chipPorStatus: Record<StatusAula, string> = {
+  agendada: 'bg-primary-light text-primary-dark',
+  realizada: 'bg-primary-accent/30 text-primary-dark',
+  cancelada: 'bg-danger-light text-danger line-through',
+  falta: 'bg-danger-light text-danger',
+}
+
+const badgePorStatus: Record<StatusAula, string> = {
+  agendada: 'bg-primary-light text-primary-dark',
+  realizada: 'bg-primary-accent/30 text-primary-dark',
+  cancelada: 'bg-danger-light text-danger',
+  falta: 'bg-danger-light text-danger',
+}
+
+function formatarData(data: string) {
+  const [ano, mes, dia] = data.split('-')
+  return `${dia}/${mes}/${ano}`
+}
+
+function nomeDataLonga(data: string) {
+  const [ano, mes, dia] = data.split('-').map(Number)
+  return new Date(ano, mes - 1, dia).toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
+}
+
+const DIAS_SEMANA = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom']
+
+function AcoesStatus({
+  aula,
+  onChange,
+}: {
+  aula: AulaComAluno
+  onChange: () => void
+}) {
   const [salvando, setSalvando] = useState(false)
 
   async function mudarStatus(status: StatusAula) {
@@ -44,57 +85,247 @@ function AulaCard({ aula, onChange }: { aula: AulaComAluno; onChange: () => void
     onChange()
   }
 
-  return (
-    <li className="card-shadow card-shadow-hover flex flex-col gap-2 rounded-xl border border-border bg-surface p-4">
-      <span className="font-semibold text-foreground">{aula.aluno?.nome ?? 'Aluno removido'}</span>
-      <span className="text-xs text-muted">
-        {formatarData(aula.data)} às {aula.hora_inicio?.slice(0, 5)}
-        {aula.hora_fim ? ` – ${aula.hora_fim.slice(0, 5)}` : ''}
-      </span>
-      {aula.valor != null && (
-        <ValorMonetario valor={Number(aula.valor)} className="text-xs font-medium text-primary" />
-      )}
+  if (aula.status !== 'agendada') {
+    return (
+      <button
+        disabled={salvando}
+        onClick={() => mudarStatus('agendada')}
+        title="Reabrir aula"
+        className="flex items-center gap-1 rounded-full px-2 py-1 text-xs text-muted transition-colors hover:bg-surface-muted hover:text-foreground disabled:opacity-50"
+      >
+        <Undo2 size={13} /> Reabrir
+      </button>
+    )
+  }
 
-      <div className="mt-1 flex flex-wrap gap-1.5 border-t border-border pt-2">
-        {aula.status === 'agendada' ? (
-          <>
-            <button
-              disabled={salvando}
-              onClick={() => mudarStatus('realizada')}
-              title="Marcar como realizada"
-              className="flex items-center gap-1 rounded-full px-2 py-1 text-xs text-muted transition-colors hover:bg-primary-light hover:text-primary-dark disabled:opacity-50"
-            >
-              <CheckCircle2 size={13} /> Realizada
-            </button>
-            <button
-              disabled={salvando}
-              onClick={() => mudarStatus('falta')}
-              title="Marcar falta do aluno"
-              className="flex items-center gap-1 rounded-full px-2 py-1 text-xs text-muted transition-colors hover:bg-danger-light hover:text-danger disabled:opacity-50"
-            >
-              <UserX size={13} /> Falta
-            </button>
-            <button
-              disabled={salvando}
-              onClick={() => mudarStatus('cancelada')}
-              title="Cancelar aula"
-              className="flex items-center gap-1 rounded-full px-2 py-1 text-xs text-muted transition-colors hover:bg-danger-light hover:text-danger disabled:opacity-50"
-            >
-              <XCircle size={13} /> Cancelar
-            </button>
-          </>
-        ) : (
+  return (
+    <>
+      <button
+        disabled={salvando}
+        onClick={() => mudarStatus('realizada')}
+        title="Marcar como realizada"
+        className="flex items-center gap-1 rounded-full px-2 py-1 text-xs text-muted transition-colors hover:bg-primary-light hover:text-primary-dark disabled:opacity-50"
+      >
+        <CheckCircle2 size={13} /> Realizada
+      </button>
+      <button
+        disabled={salvando}
+        onClick={() => mudarStatus('falta')}
+        title="Marcar falta do aluno"
+        className="flex items-center gap-1 rounded-full px-2 py-1 text-xs text-muted transition-colors hover:bg-danger-light hover:text-danger disabled:opacity-50"
+      >
+        <UserX size={13} /> Falta
+      </button>
+      <button
+        disabled={salvando}
+        onClick={() => mudarStatus('cancelada')}
+        title="Cancelar aula"
+        className="flex items-center gap-1 rounded-full px-2 py-1 text-xs text-muted transition-colors hover:bg-danger-light hover:text-danger disabled:opacity-50"
+      >
+        <XCircle size={13} /> Cancelar
+      </button>
+    </>
+  )
+}
+
+function CalendarioMensal({
+  aulas,
+  mesAncora,
+  onNavegar,
+}: {
+  aulas: AulaComAluno[]
+  mesAncora: Date
+  onNavegar: (delta: number | 'hoje') => void
+}) {
+  const ano = mesAncora.getFullYear()
+  const mes = mesAncora.getMonth()
+
+  const celulas = useMemo(() => {
+    const primeiroDia = new Date(ano, mes, 1)
+    const offset = (primeiroDia.getDay() + 6) % 7 // segunda = 0
+    const totalDias = new Date(ano, mes + 1, 0).getDate()
+
+    const dias: (string | null)[] = []
+    for (let i = 0; i < offset; i++) dias.push(null)
+    for (let dia = 1; dia <= totalDias; dia++) {
+      dias.push(fmtISO(new Date(ano, mes, dia)))
+    }
+    while (dias.length % 7 !== 0) dias.push(null)
+    return dias
+  }, [ano, mes])
+
+  const aulasPorDia = useMemo(() => {
+    const mapa = new Map<string, AulaComAluno[]>()
+    for (const aula of aulas) {
+      const lista = mapa.get(aula.data) ?? []
+      lista.push(aula)
+      mapa.set(aula.data, lista)
+    }
+    for (const lista of mapa.values()) {
+      lista.sort((a, b) => a.hora_inicio.localeCompare(b.hora_inicio))
+    }
+    return mapa
+  }, [aulas])
+
+  const hoje = fmtISO(new Date())
+  const tituloMes = mesAncora.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+
+  return (
+    <div className="card-shadow rounded-2xl border border-border bg-surface p-4 sm:p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-sm font-semibold capitalize text-foreground">{tituloMes}</h2>
+        <div className="flex items-center gap-1">
           <button
-            disabled={salvando}
-            onClick={() => mudarStatus('agendada')}
-            title="Reabrir aula"
-            className="flex items-center gap-1 rounded-full px-2 py-1 text-xs text-muted transition-colors hover:bg-surface-muted hover:text-foreground disabled:opacity-50"
+            onClick={() => onNavegar('hoje')}
+            className="rounded-full border border-border px-3 py-1 text-xs font-medium text-muted transition-colors hover:border-primary hover:text-primary"
           >
-            <Undo2 size={13} /> Reabrir
+            Hoje
           </button>
-        )}
+          <button
+            onClick={() => onNavegar(-1)}
+            title="Mês anterior"
+            className="rounded-full p-1.5 text-muted transition-colors hover:bg-surface-muted hover:text-foreground"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <button
+            onClick={() => onNavegar(1)}
+            title="Próximo mês"
+            className="rounded-full p-1.5 text-muted transition-colors hover:bg-surface-muted hover:text-foreground"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
-    </li>
+
+      <div className="grid grid-cols-7 gap-1">
+        {DIAS_SEMANA.map((dia) => (
+          <div
+            key={dia}
+            className="pb-2 text-center text-[11px] font-semibold uppercase tracking-wide text-muted"
+          >
+            {dia}
+          </div>
+        ))}
+
+        {celulas.map((data, indice) => {
+          if (!data) {
+            return <div key={`vazio-${indice}`} className="min-h-20 rounded-lg" />
+          }
+
+          const doDia = aulasPorDia.get(data) ?? []
+          const visiveis = doDia.slice(0, 3)
+          const extras = doDia.length - visiveis.length
+          const ehHoje = data === hoje
+
+          return (
+            <div
+              key={data}
+              className={`flex min-h-20 flex-col gap-1 rounded-lg border p-1.5 ${
+                ehHoje ? 'border-primary bg-primary-light/40' : 'border-border bg-background/60'
+              }`}
+            >
+              <span
+                className={`text-[11px] font-semibold ${
+                  ehHoje ? 'text-primary-dark' : 'text-muted'
+                }`}
+              >
+                {Number(data.slice(8, 10))}
+              </span>
+              {visiveis.map((aula) => (
+                <span
+                  key={aula.id}
+                  title={`${aula.hora_inicio.slice(0, 5)} — ${aula.aluno?.nome ?? 'Aluno removido'} (${statusLabel[aula.status]})`}
+                  className={`truncate rounded px-1 py-0.5 text-[10px] font-medium leading-tight ${chipPorStatus[aula.status]}`}
+                >
+                  {aula.hora_inicio.slice(0, 5)} {aula.aluno?.nome ?? '—'}
+                </span>
+              ))}
+              {extras > 0 && (
+                <span className="text-[10px] font-medium text-muted">+{extras} mais</span>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function ListaAulas({
+  aulas,
+  onChange,
+}: {
+  aulas: AulaComAluno[]
+  onChange: () => void
+}) {
+  const grupos = useMemo(() => {
+    const mapa = new Map<string, AulaComAluno[]>()
+    for (const aula of aulas) {
+      const lista = mapa.get(aula.data) ?? []
+      lista.push(aula)
+      mapa.set(aula.data, lista)
+    }
+    return [...mapa.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([data, lista]) => ({
+        data,
+        lista: lista.sort((a, b) => a.hora_inicio.localeCompare(b.hora_inicio)),
+      }))
+  }, [aulas])
+
+  if (grupos.length === 0) {
+    return (
+      <div className="card-shadow rounded-2xl border border-dashed border-border bg-surface p-8 text-center">
+        <p className="text-sm text-muted">Nenhuma aula marcada ainda.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      {grupos.map((grupo) => (
+        <section key={grupo.data} className="flex flex-col gap-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
+            {nomeDataLonga(grupo.data)}
+          </h3>
+          <ul className="flex flex-col gap-2">
+            {grupo.lista.map((aula) => (
+              <li
+                key={aula.id}
+                className="card-shadow flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3"
+              >
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate font-medium text-foreground">
+                    {aula.aluno?.nome ?? 'Aluno removido'}
+                  </span>
+                  <span className="text-xs text-muted">
+                    {formatarData(aula.data)} · {aula.hora_inicio.slice(0, 5)}
+                    {aula.hora_fim ? ` – ${aula.hora_fim.slice(0, 5)}` : ''}
+                    {aula.valor != null && (
+                      <>
+                        {' · '}
+                        <ValorMonetario valor={Number(aula.valor)} />
+                      </>
+                    )}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${badgePorStatus[aula.status]}`}
+                  >
+                    {statusLabel[aula.status]}
+                  </span>
+                  <div className="flex gap-1">
+                    <AcoesStatus aula={aula} onChange={onChange} />
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
   )
 }
 
@@ -104,6 +335,11 @@ function AulasContent() {
   const [aulas, setAulas] = useState<AulaComAluno[] | null>(null)
   const [erroAulas, setErroAulas] = useState<string | null>(null)
   const [mostrarForm, setMostrarForm] = useState(false)
+  const [visao, setVisao] = useState<'calendario' | 'lista'>('calendario')
+  const [mesAncora, setMesAncora] = useState(() => {
+    const agora = new Date()
+    return new Date(agora.getFullYear(), agora.getMonth(), 1)
+  })
 
   const fetchAulas = useCallback(() => {
     const supabase = createClient()
@@ -132,22 +368,57 @@ function AulasContent() {
     fetchAulas()
   }, [fetchAulas])
 
+  function navegarMes(delta: number | 'hoje') {
+    if (delta === 'hoje') {
+      const agora = new Date()
+      setMesAncora(new Date(agora.getFullYear(), agora.getMonth(), 1))
+    } else {
+      setMesAncora((atual) => new Date(atual.getFullYear(), atual.getMonth() + delta, 1))
+    }
+  }
+
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10">
+    <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Agenda de aulas</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Agenda</h1>
           <p className="mt-1 text-sm text-muted">
-            Acompanhe e organize suas aulas como um quadro de tarefas.
+            Suas aulas organizadas no calendário do mês.
           </p>
         </div>
-        <button
-          onClick={() => setMostrarForm((v) => !v)}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-contrast transition-colors hover:bg-primary-dark"
-        >
-          <CalendarPlus size={16} />
-          {mostrarForm ? 'Fechar formulário' : 'Marcar aula'}
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-full border border-border bg-surface p-0.5">
+            <button
+              onClick={() => setVisao('calendario')}
+              title="Visualizar como calendário"
+              className={`rounded-full p-1.5 transition-colors ${
+                visao === 'calendario'
+                  ? 'bg-primary text-primary-contrast'
+                  : 'text-muted hover:text-foreground'
+              }`}
+            >
+              <CalendarDays size={15} />
+            </button>
+            <button
+              onClick={() => setVisao('lista')}
+              title="Visualizar como lista"
+              className={`rounded-full p-1.5 transition-colors ${
+                visao === 'lista'
+                  ? 'bg-primary text-primary-contrast'
+                  : 'text-muted hover:text-foreground'
+              }`}
+            >
+              <List size={15} />
+            </button>
+          </div>
+          <button
+            onClick={() => setMostrarForm((v) => !v)}
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-contrast transition-colors hover:bg-primary-dark"
+          >
+            <CalendarPlus size={16} />
+            {mostrarForm ? 'Fechar' : 'Marcar aula'}
+          </button>
+        </div>
       </div>
 
       {erroAlunos && (
@@ -176,34 +447,12 @@ function AulasContent() {
 
       {aulas === null && !erroAulas && <p className="text-sm text-muted">Carregando...</p>}
 
-      {aulas !== null && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {colunas.map((coluna) => {
-            const itens = aulas.filter((a) => a.status === coluna.status)
-            return (
-              <div key={coluna.status} className="flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                  <span className={`h-2 w-2 rounded-full ${coluna.corBarra}`} />
-                  <h2 className="text-sm font-semibold text-foreground">{coluna.titulo}</h2>
-                  <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs text-muted">
-                    {itens.length}
-                  </span>
-                </div>
-                <ul className="flex flex-col gap-3">
-                  {itens.length === 0 && (
-                    <li className="rounded-xl border border-dashed border-border p-4 text-center text-xs text-muted">
-                      Nenhuma aula
-                    </li>
-                  )}
-                  {itens.map((aula) => (
-                    <AulaCard key={aula.id} aula={aula} onChange={fetchAulas} />
-                  ))}
-                </ul>
-              </div>
-            )
-          })}
-        </div>
-      )}
+      {aulas !== null &&
+        (visao === 'calendario' ? (
+          <CalendarioMensal aulas={aulas} mesAncora={mesAncora} onNavegar={navegarMes} />
+        ) : (
+          <ListaAulas aulas={aulas} onChange={fetchAulas} />
+        ))}
     </main>
   )
 }

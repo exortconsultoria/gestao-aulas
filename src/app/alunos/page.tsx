@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { UserPlus, Mail, Phone } from 'lucide-react'
+import { UserPlus, Mail, Phone, MapPin } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { AuthGuard } from '@/components/auth-guard'
 import { ValorMonetario } from '@/components/valor-monetario'
@@ -12,6 +12,7 @@ type Aluno = {
   nome: string
   email: string | null
   telefone: string | null
+  bairro: string | null
   tipo_cobranca: string
   valor_mensalidade: number | null
   valor_hora: number | null
@@ -26,7 +27,9 @@ function AlunosContent() {
     const supabase = createClient()
     supabase
       .from('alunos')
-      .select('id, nome, email, telefone, tipo_cobranca, valor_mensalidade, valor_hora, ativo')
+      .select(
+        'id, nome, email, telefone, bairro, tipo_cobranca, valor_mensalidade, valor_hora, ativo'
+      )
       .order('nome')
       .then(({ data, error }) => {
         if (error) setError(error.message)
@@ -100,6 +103,11 @@ function AlunosContent() {
                 {aluno.telefone && (
                   <span className="flex items-center gap-1.5">
                     <Phone size={12} /> {aluno.telefone}
+                  </span>
+                )}
+                {aluno.bairro && (
+                  <span className="flex items-center gap-1.5">
+                    <MapPin size={12} /> {aluno.bairro}
                   </span>
                 )}
               </div>

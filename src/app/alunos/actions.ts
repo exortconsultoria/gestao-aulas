@@ -25,6 +25,7 @@ export async function criarAluno(
     email: formData.get('email')?.toString() || null,
     telefone: formData.get('telefone')?.toString() || null,
     data_nascimento: formData.get('data_nascimento')?.toString() || null,
+    bairro: formData.get('bairro')?.toString().trim() || null,
     tipo_cobranca: tipoCobranca,
     valor_mensalidade:
       tipoCobranca === 'mensalista' && valorMensalidade ? Number(valorMensalidade) : null,

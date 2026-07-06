@@ -3,7 +3,16 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { GraduationCap, Home, Users, CalendarDays, Eye, EyeOff, LogOut } from 'lucide-react'
+import {
+  GraduationCap,
+  Home,
+  Users,
+  CalendarDays,
+  Wallet,
+  Eye,
+  EyeOff,
+  LogOut,
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { FinanceVisibilityProvider, useFinanceVisibility } from '@/lib/finance-visibility'
 
@@ -11,6 +20,7 @@ const navItems = [
   { href: '/', label: 'Início', icon: Home },
   { href: '/alunos', label: 'Alunos', icon: Users },
   { href: '/aulas', label: 'Agenda', icon: CalendarDays },
+  { href: '/financeiro', label: 'Financeiro', icon: Wallet },
 ]
 
 function NavLink({ href, label, icon: Icon }: (typeof navItems)[number]) {

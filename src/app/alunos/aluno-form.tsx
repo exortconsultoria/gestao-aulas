@@ -114,16 +114,24 @@ export function AlunoForm() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="data_nascimento" className={labelClass}>
-          Data de nascimento
-        </label>
-        <input
-          id="data_nascimento"
-          name="data_nascimento"
-          type="date"
-          className={inputClass}
-        />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="data_nascimento" className={labelClass}>
+            Data de nascimento
+          </label>
+          <input
+            id="data_nascimento"
+            name="data_nascimento"
+            type="date"
+            className={inputClass}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="bairro" className={labelClass}>
+            Bairro
+          </label>
+          <input id="bairro" name="bairro" type="text" className={inputClass} />
+        </div>
       </div>
 
       <TipoCobrancaFields key={state.submissionId} />
