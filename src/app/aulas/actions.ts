@@ -51,5 +51,8 @@ export async function reagendarAula(
   dados: { data: string; hora_inicio: string; hora_fim: string | null }
 ) {
   const supabase = createClient()
-  return supabase.from('aulas').update(dados).eq('id', id)
+  // Remarcar devolve a aula ao status 'agendada': uma aula cancelada ou com
+  // falta que foi remarcada deixa de contar como perda ("cancelada" fica
+  // reservada para aulas que geraram prejuízo, sem remarcação).
+  return supabase.from('aulas').update({ ...dados, status: 'agendada' }).eq('id', id)
 }

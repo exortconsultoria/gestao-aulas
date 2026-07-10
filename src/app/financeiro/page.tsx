@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { AuthGuard } from '@/components/auth-guard'
+import { BotaoFlutuante } from '@/components/botao-flutuante'
 import { StatCard } from '@/components/stat-card'
 import { Skeleton, SkeletonGrid } from '@/components/skeleton'
 import { ValorMonetario } from '@/components/valor-monetario'
@@ -127,14 +128,14 @@ function CustoForm({ onCreated }: { onCreated: () => void }) {
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="descricao" className={labelClass}>
-          Descrição {categoria === 'outros' ? '*' : '(opcional)'}
+          Nome do custo *
         </label>
         <input
           id="descricao"
           name="descricao"
           type="text"
-          required={categoria === 'outros'}
-          placeholder={categoria === 'outros' ? 'Descreva o custo' : ''}
+          required
+          placeholder="Ex.: corrida até a aula da Maria"
           className={inputClass}
         />
       </div>
@@ -251,6 +252,17 @@ function FinanceiroContent() {
     return 'Alerta: os custos superaram a receita no período.'
   }, [resumo])
 
+  const historiaCustos = useMemo(() => {
+    if (!resumo || resumo.custosPeriodo.length === 0)
+      return 'Registre aulas perdidas, deslocamentos e outros gastos.'
+    const top = resumo.porCategoria[0]
+    const total = resumo.custoEfetivo
+    if (!top || total === 0) return 'Registre aulas perdidas, deslocamentos e outros gastos.'
+    const pct = Math.round((top.valor / total) * 100)
+    const quantidade = resumo.custosPeriodo.length
+    return `${quantidade} ${quantidade === 1 ? 'custo registrado' : 'custos registrados'} — ${top.label} responde por ${pct}% do total.`
+  }, [resumo])
+
   const maxCategoria = Math.max(...(resumo?.porCategoria.map((c) => c.valor) ?? [0]), 1)
 
   async function handleExcluir(id: string) {
@@ -318,7 +330,7 @@ function FinanceiroContent() {
               icon={Receipt}
               label="Custo projetado"
               value={<ValorMonetario valor={resumo.custoProjetado} />}
-              hint="custos + perdas com faltas e cancelamentos"
+              hint="custos + perdas sem remarcação (faltas e cancelamentos)"
               tone={resumo.custoProjetado > 0 ? 'negative' : 'default'}
             />
             <StatCard
@@ -351,20 +363,9 @@ function FinanceiroContent() {
           </div>
 
           <section className="card-shadow flex flex-col gap-5 rounded-2xl border border-border bg-surface p-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-sm font-semibold text-foreground">Custos do período</h2>
-                <p className="mt-1 text-xs text-muted">
-                  Registre aulas perdidas, deslocamentos e outros gastos.
-                </p>
-              </div>
-              <button
-                onClick={() => setMostrarForm((v) => !v)}
-                className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted transition-colors hover:border-primary hover:text-primary"
-              >
-                <Plus size={14} />
-                {mostrarForm ? 'Fechar' : 'Registrar custo'}
-              </button>
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Custos do período</h2>
+              <p className="mt-1 text-xs text-muted">{historiaCustos}</p>
             </div>
 
             {mostrarForm && (
@@ -401,39 +402,64 @@ function FinanceiroContent() {
             {resumo.custosPeriodo.length === 0 ? (
               <p className="text-sm text-muted">Nenhum custo registrado no período.</p>
             ) : (
-              <ul className="flex flex-col divide-y divide-border">
-                {resumo.custosPeriodo.map((custo) => (
-                  <li
-                    key={custo.id}
-                    className="flex items-center justify-between gap-3 py-2.5 text-sm"
-                  >
-                    <div className="flex min-w-0 flex-col">
-                      <span className="font-medium text-foreground">
-                        {labelCategoria[custo.categoria]}
-                        {custo.descricao ? ` — ${custo.descricao}` : ''}
-                      </span>
-                      <span className="text-xs text-muted">{formatarData(custo.data)}</span>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-3">
-                      <ValorMonetario
-                        valor={Number(custo.valor)}
-                        className="text-sm font-medium text-foreground"
-                      />
-                      <button
-                        onClick={() => handleExcluir(custo.id)}
-                        title="Excluir custo"
-                        className="rounded-full p-1.5 text-muted transition-colors hover:bg-danger-light hover:text-danger"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[30rem] text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left text-xs font-semibold uppercase tracking-wide text-muted">
+                      <th className="py-2 pr-3 font-semibold">Data</th>
+                      <th className="py-2 pr-3 font-semibold">Nome do custo</th>
+                      <th className="py-2 pr-3 font-semibold">Categoria</th>
+                      <th className="py-2 pr-3 text-right font-semibold">Valor</th>
+                      <th className="py-2">
+                        <span className="sr-only">Ações</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {resumo.custosPeriodo.map((custo) => (
+                      <tr key={custo.id} className="border-b border-border/60 last:border-0">
+                        <td className="whitespace-nowrap py-2.5 pr-3 text-muted">
+                          {formatarData(custo.data)}
+                        </td>
+                        <td className="py-2.5 pr-3 font-medium text-foreground">
+                          {custo.descricao ?? '—'}
+                        </td>
+                        <td className="py-2.5 pr-3">
+                          <span className="whitespace-nowrap rounded-full bg-surface-muted px-2 py-0.5 text-xs text-foreground/80">
+                            {labelCategoria[custo.categoria]}
+                          </span>
+                        </td>
+                        <td className="py-2.5 pr-3 text-right tabular-nums">
+                          <ValorMonetario
+                            valor={Number(custo.valor)}
+                            className="font-medium text-foreground"
+                          />
+                        </td>
+                        <td className="py-2.5 text-right">
+                          <button
+                            onClick={() => handleExcluir(custo.id)}
+                            title="Excluir custo"
+                            className="rounded-full p-1.5 text-muted transition-colors hover:bg-danger-light hover:text-danger"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </section>
         </>
       )}
+
+      <BotaoFlutuante
+        icon={Plus}
+        label={mostrarForm ? 'Fechar formulário' : 'Registrar custo'}
+        ativo={mostrarForm}
+        onClick={() => setMostrarForm((v) => !v)}
+      />
     </main>
   )
 }

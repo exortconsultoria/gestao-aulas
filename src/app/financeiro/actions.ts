@@ -29,11 +29,8 @@ export async function criarCusto(
     return { error: 'Selecione a categoria.', submissionId: prevState.submissionId }
   if (!valor || Number(valor) <= 0)
     return { error: 'Informe um valor maior que zero.', submissionId: prevState.submissionId }
-  if (categoria === 'outros' && !descricao)
-    return {
-      error: 'Descreva o custo ao usar a categoria "Outros".',
-      submissionId: prevState.submissionId,
-    }
+  if (!descricao)
+    return { error: 'Informe o nome do custo.', submissionId: prevState.submissionId }
 
   const supabase = createClient()
   const { error } = await supabase.from('custos').insert({

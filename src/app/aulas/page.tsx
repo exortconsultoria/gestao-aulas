@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  CalendarPlus,
   CalendarDays,
   CalendarClock,
   List,
@@ -12,9 +11,11 @@ import {
   XCircle,
   UserX,
   Undo2,
+  Plus,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { AuthGuard } from '@/components/auth-guard'
+import { BotaoFlutuante } from '@/components/botao-flutuante'
 import { Skeleton } from '@/components/skeleton'
 import { ValorMonetario } from '@/components/valor-monetario'
 import { fmtISO } from '@/components/periodo-selector'
@@ -369,17 +370,22 @@ function ItemAula({ aula, onChange }: { aula: AulaComAluno; onChange: () => void
             {statusLabel[aula.status]}
           </span>
           <div className="flex gap-1">
-            {aula.status === 'agendada' && (
+            {aula.status !== 'realizada' && (
               <button
                 onClick={() => setReagendando((v) => !v)}
-                title="Reagendar esta aula"
+                title={
+                  aula.status === 'agendada'
+                    ? 'Reagendar esta aula'
+                    : 'Remarcar esta aula (deixa de contar como perda)'
+                }
                 className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs transition-colors ${
                   reagendando
                     ? 'bg-primary-light text-primary-dark'
                     : 'text-muted hover:bg-primary-light hover:text-primary-dark'
                 }`}
               >
-                <CalendarClock size={13} /> Reagendar
+                <CalendarClock size={13} />
+                {aula.status === 'agendada' ? 'Reagendar' : 'Remarcar'}
               </button>
             )}
             <AcoesStatus aula={aula} onChange={onChange} />
@@ -542,15 +548,15 @@ function AulasContent() {
               <List size={15} />
             </button>
           </div>
-          <button
-            onClick={() => setMostrarForm((v) => !v)}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-contrast transition-colors hover:bg-primary-dark"
-          >
-            <CalendarPlus size={16} />
-            {mostrarForm ? 'Fechar' : 'Marcar aula'}
-          </button>
         </div>
       </div>
+
+      <BotaoFlutuante
+        icon={Plus}
+        label={mostrarForm ? 'Fechar formulário' : 'Marcar aula'}
+        ativo={mostrarForm}
+        onClick={() => setMostrarForm((v) => !v)}
+      />
 
       {erroAlunos && (
         <p className="rounded-lg bg-danger-light px-3 py-2 text-sm text-danger">

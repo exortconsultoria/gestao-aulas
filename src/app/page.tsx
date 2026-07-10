@@ -308,7 +308,7 @@ function DashboardContent() {
               icon={XCircle}
               label="Aulas canceladas"
               value={String(analise.canceladas)}
-              hint="inclui faltas"
+              hint="sem remarcação · inclui faltas"
               tone={analise.canceladas > 0 ? 'negative' : 'default'}
             />
           </div>
