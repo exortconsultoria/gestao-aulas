@@ -76,7 +76,7 @@ function CustoForm({ onCreated }: { onCreated: () => void }) {
 
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 @lg:grid-cols-3">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="data" className={labelClass}>
             Data *
@@ -287,7 +287,7 @@ function FinanceiroContent() {
           <SkeletonGrid
             cards={6}
             cardClassName="h-24"
-            gridClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            gridClassName="grid grid-cols-1 gap-4 @xl:grid-cols-2 @3xl:grid-cols-3"
           />
           <Skeleton className="h-48" />
         </>
@@ -295,7 +295,7 @@ function FinanceiroContent() {
 
       {resumo && (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 @xl:grid-cols-2 @3xl:grid-cols-3">
             <StatCard
               icon={Wallet}
               label="Valor projetado"

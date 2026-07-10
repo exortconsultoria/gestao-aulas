@@ -42,7 +42,7 @@ function AlunosContent() {
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Alunos</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Cadastro de Alunos</h1>
           <p className="mt-1 text-sm text-muted">
             {alunos === null
               ? 'Todos os alunos cadastrados na plataforma.'
@@ -70,7 +70,7 @@ function AlunosContent() {
         <SkeletonGrid
           cards={4}
           cardClassName="h-36"
-          gridClassName="grid grid-cols-1 gap-3 sm:grid-cols-2"
+          gridClassName="grid grid-cols-1 gap-3 @xl:grid-cols-2"
         />
       )}
 
@@ -80,7 +80,7 @@ function AlunosContent() {
         </div>
       )}
 
-      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-3 @xl:grid-cols-2">
         {alunos?.map((aluno) => {
           const cobranca =
             aluno.tipo_cobranca === 'mensalista' ? (

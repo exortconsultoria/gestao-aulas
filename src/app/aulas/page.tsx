@@ -259,7 +259,7 @@ function CalendarioMensal({
   const tituloMes = mesAncora.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
 
   return (
-    <div className="card-shadow rounded-2xl border border-border bg-surface p-4 sm:p-6">
+    <div className="card-shadow rounded-2xl border border-border bg-surface p-4 @2xl:p-6">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-semibold capitalize text-foreground">{tituloMes}</h2>
         <div className="flex items-center gap-1">
@@ -298,7 +298,7 @@ function CalendarioMensal({
 
         {celulas.map((data, indice) => {
           if (!data) {
-            return <div key={`vazio-${indice}`} className="min-h-20 rounded-lg" />
+            return <div key={`vazio-${indice}`} className="min-h-16 rounded-lg @2xl:min-h-20" />
           }
 
           const doDia = aulasPorDia.get(data) ?? []
@@ -309,7 +309,7 @@ function CalendarioMensal({
           return (
             <div
               key={data}
-              className={`flex min-h-20 flex-col gap-1 rounded-lg border p-1.5 ${
+              className={`flex min-h-16 flex-col gap-1 rounded-lg border p-1.5 @2xl:min-h-20 ${
                 ehHoje ? 'border-primary bg-primary-light/40' : 'border-border bg-background/60'
               }`}
             >
@@ -326,7 +326,8 @@ function CalendarioMensal({
                   title={`${aula.hora_inicio.slice(0, 5)} — ${aula.aluno?.nome ?? 'Aluno removido'} (${statusLabel[aula.status]})`}
                   className={`truncate rounded px-1 py-0.5 text-[10px] font-medium leading-tight ${chipPorStatus[aula.status]}`}
                 >
-                  {aula.hora_inicio.slice(0, 5)} {aula.aluno?.nome ?? '—'}
+                  {aula.hora_inicio.slice(0, 5)}
+                  <span className="hidden @2xl:inline"> {aula.aluno?.nome ?? '—'}</span>
                 </span>
               ))}
               {extras > 0 && (
@@ -513,7 +514,7 @@ function AulasContent() {
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Agenda</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Gestão de Aulas</h1>
           <p className="mt-1 text-sm text-muted">{subtitulo}</p>
         </div>
         <div className="flex items-center gap-2">
