@@ -75,22 +75,18 @@ function SideLink({
   )
 }
 
-function FinanceItem({ expandida }: { expandida: boolean }) {
+function BotaoOlho({ fixo = false }: { fixo?: boolean }) {
   const { visivel, alternar } = useFinanceVisibility()
-  const label = visivel ? 'Valores visíveis' : 'Valores ocultos'
 
   return (
     <button
       onClick={alternar}
-      title={expandida ? undefined : label}
-      className={classeItem(false, expandida)}
+      title={visivel ? 'Ocultar valores financeiros' : 'Mostrar valores financeiros'}
+      className={`${
+        fixo ? 'card-shadow fixed right-6 top-8 z-20' : ''
+      } flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-muted transition-colors hover:border-primary hover:text-primary`}
     >
-      {visivel ? (
-        <Eye size={18} className="shrink-0" />
-      ) : (
-        <EyeOff size={18} className="shrink-0" />
-      )}
-      {expandida && <span className="truncate">{label}</span>}
+      {visivel ? <Eye size={16} /> : <EyeOff size={16} />}
     </button>
   )
 }
@@ -183,7 +179,6 @@ function ConteudoMenu({
         ))}
       </nav>
       <div className="flex flex-col gap-1 border-t border-border px-2 py-3">
-        <FinanceItem expandida={expandida} />
         <ViewItem expandida={expandida} />
         <ConfigMenu nome={nome} onLogout={onLogout} expandida={expandida} />
       </div>
@@ -248,18 +243,21 @@ function MobileHeader({ nome, onLogout }: { nome: string; onLogout: () => void }
   return (
     <>
       <header className="sticky top-0 z-10 border-b border-border bg-surface/90 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-md items-center gap-3 px-4 py-2.5">
-          <button
-            onClick={() => setAberto(true)}
-            title="Abrir menu"
-            className="rounded-lg p-1.5 text-muted transition-colors hover:bg-surface-muted hover:text-foreground"
-          >
-            <Menu size={20} />
-          </button>
-          <div className="flex items-center gap-2 text-primary">
-            <GraduationCap size={20} strokeWidth={2.25} />
-            <span className="text-sm font-semibold text-foreground">Gestão de Aulas</span>
+        <div className="mx-auto flex w-full max-w-md items-center justify-between gap-3 px-4 py-2.5">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setAberto(true)}
+              title="Abrir menu"
+              className="rounded-lg p-1.5 text-muted transition-colors hover:bg-surface-muted hover:text-foreground"
+            >
+              <Menu size={20} />
+            </button>
+            <div className="flex items-center gap-2 text-primary">
+              <GraduationCap size={20} strokeWidth={2.25} />
+              <span className="text-sm font-semibold text-foreground">Gestão de Aulas</span>
+            </div>
           </div>
+          <BotaoOlho />
         </div>
       </header>
 
@@ -313,7 +311,11 @@ function Shell({
       <Sidebar nome={nome} onLogout={onLogout} />
       {/* @container: os grids das páginas respondem à largura desta área,
           não do viewport — o modo celular colapsa tudo para uma coluna. */}
-      <div className="@container min-w-0 flex-1 pb-24">{children}</div>
+      <div className="@container min-w-0 flex-1 pb-24">
+        {/* Olhinho na altura do cabeçalho das páginas, do lado direito */}
+        <BotaoOlho fixo />
+        {children}
+      </div>
     </div>
   )
 }

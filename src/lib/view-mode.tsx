@@ -14,14 +14,14 @@ type ViewModeContextValue = {
 const ViewModeContext = createContext<ViewModeContextValue | null>(null)
 
 export function ViewModeProvider({ children }: { children: ReactNode }) {
-  const [modo, setModo] = useState<Modo>('desktop')
+  const [modo, setModo] = useState<Modo>('mobile')
 
   useEffect(() => {
-    // Lê a preferência salva. Começa em 'desktop' (default combinado) para
+    // Lê a preferência salva. Começa em 'mobile' (default combinado) para
     // bater com o HTML pré-gerado e só então sincroniza — daí a exceção.
     const salvo = window.localStorage.getItem(STORAGE_KEY)
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (salvo === 'mobile') setModo('mobile')
+    if (salvo === 'desktop') setModo('desktop')
   }, [])
 
   function alternar() {

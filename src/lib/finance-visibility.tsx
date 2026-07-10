@@ -12,15 +12,15 @@ type FinanceVisibilityContextValue = {
 const FinanceVisibilityContext = createContext<FinanceVisibilityContextValue | null>(null)
 
 export function FinanceVisibilityProvider({ children }: { children: ReactNode }) {
-  const [visivel, setVisivel] = useState(false)
+  const [visivel, setVisivel] = useState(true)
 
   useEffect(() => {
-    // Lê a preferência salva no navegador. Precisa começar com `false` (para
-    // bater com o HTML estático pré-gerado) e só então sincronizar — por
-    // isso a exceção à regra de não chamar setState dentro de effect.
+    // Lê a preferência salva no navegador. Precisa começar com o default
+    // (visível) para bater com o HTML estático pré-gerado e só então
+    // sincronizar — por isso a exceção à regra do effect.
     const salvo = window.localStorage.getItem(STORAGE_KEY)
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (salvo === '1') setVisivel(true)
+    if (salvo === '0') setVisivel(false)
   }, [])
 
   function alternar() {
