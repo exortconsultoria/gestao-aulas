@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
+  CalendarPlus,
   CalendarDays,
   CalendarClock,
   List,
@@ -11,11 +12,9 @@ import {
   XCircle,
   UserX,
   Undo2,
-  Plus,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { AuthGuard } from '@/components/auth-guard'
-import { BotaoFlutuante } from '@/components/botao-flutuante'
 import { Skeleton } from '@/components/skeleton'
 import { ValorMonetario } from '@/components/valor-monetario'
 import { fmtISO } from '@/components/periodo-selector'
@@ -260,7 +259,7 @@ function CalendarioMensal({
   const tituloMes = mesAncora.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
 
   return (
-    <div className="card-shadow rounded-2xl border border-border bg-surface p-4 @2xl:p-6">
+    <div className="card-shadow rounded-2xl border border-border bg-surface p-4 sm:p-6">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-semibold capitalize text-foreground">{tituloMes}</h2>
         <div className="flex items-center gap-1">
@@ -299,7 +298,7 @@ function CalendarioMensal({
 
         {celulas.map((data, indice) => {
           if (!data) {
-            return <div key={`vazio-${indice}`} className="min-h-16 rounded-lg @2xl:min-h-20" />
+            return <div key={`vazio-${indice}`} className="min-h-20 rounded-lg" />
           }
 
           const doDia = aulasPorDia.get(data) ?? []
@@ -310,7 +309,7 @@ function CalendarioMensal({
           return (
             <div
               key={data}
-              className={`flex min-h-16 flex-col gap-1 rounded-lg border p-1.5 @2xl:min-h-20 ${
+              className={`flex min-h-20 flex-col gap-1 rounded-lg border p-1.5 ${
                 ehHoje ? 'border-primary bg-primary-light/40' : 'border-border bg-background/60'
               }`}
             >
@@ -327,8 +326,7 @@ function CalendarioMensal({
                   title={`${aula.hora_inicio.slice(0, 5)} — ${aula.aluno?.nome ?? 'Aluno removido'} (${statusLabel[aula.status]})`}
                   className={`truncate rounded px-1 py-0.5 text-[10px] font-medium leading-tight ${chipPorStatus[aula.status]}`}
                 >
-                  {aula.hora_inicio.slice(0, 5)}
-                  <span className="hidden @2xl:inline"> {aula.aluno?.nome ?? '—'}</span>
+                  {aula.hora_inicio.slice(0, 5)} {aula.aluno?.nome ?? '—'}
                 </span>
               ))}
               {extras > 0 && (
@@ -370,22 +368,17 @@ function ItemAula({ aula, onChange }: { aula: AulaComAluno; onChange: () => void
             {statusLabel[aula.status]}
           </span>
           <div className="flex gap-1">
-            {aula.status !== 'realizada' && (
+            {aula.status === 'agendada' && (
               <button
                 onClick={() => setReagendando((v) => !v)}
-                title={
-                  aula.status === 'agendada'
-                    ? 'Reagendar esta aula'
-                    : 'Remarcar esta aula (deixa de contar como perda)'
-                }
+                title="Reagendar esta aula"
                 className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs transition-colors ${
                   reagendando
                     ? 'bg-primary-light text-primary-dark'
                     : 'text-muted hover:bg-primary-light hover:text-primary-dark'
                 }`}
               >
-                <CalendarClock size={13} />
-                {aula.status === 'agendada' ? 'Reagendar' : 'Remarcar'}
+                <CalendarClock size={13} /> Reagendar
               </button>
             )}
             <AcoesStatus aula={aula} onChange={onChange} />
@@ -520,7 +513,7 @@ function AulasContent() {
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Gestão de Aulas</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Agenda</h1>
           <p className="mt-1 text-sm text-muted">{subtitulo}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -548,15 +541,15 @@ function AulasContent() {
               <List size={15} />
             </button>
           </div>
+          <button
+            onClick={() => setMostrarForm((v) => !v)}
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-contrast transition-colors hover:bg-primary-dark"
+          >
+            <CalendarPlus size={16} />
+            {mostrarForm ? 'Fechar' : 'Marcar aula'}
+          </button>
         </div>
       </div>
-
-      <BotaoFlutuante
-        icon={Plus}
-        label={mostrarForm ? 'Fechar formulário' : 'Marcar aula'}
-        ativo={mostrarForm}
-        onClick={() => setMostrarForm((v) => !v)}
-      />
 
       {erroAlunos && (
         <p className="rounded-lg bg-danger-light px-3 py-2 text-sm text-danger">

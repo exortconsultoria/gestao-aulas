@@ -47,7 +47,7 @@ function TipoCobrancaFields() {
           O valor de cada aula é definido na hora de marcá-la, na Agenda.
         </p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 @lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
             <label htmlFor="valor_mensalidade" className={labelClass}>
               Valor da mensalidade (R$)
@@ -99,7 +99,7 @@ export function AlunoForm() {
         <input id="nome" name="nome" type="text" required className={inputClass} />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 @lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="email" className={labelClass}>
             E-mail
@@ -114,7 +114,7 @@ export function AlunoForm() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 @lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="data_nascimento" className={labelClass}>
             Data de nascimento

@@ -234,7 +234,7 @@ function DashboardContent() {
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-10">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">Visão Geral</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Visão geral</h1>
         <p className="mt-1 text-sm text-muted">
           {saudacao()}
           {nomeUsuario ? `, ${nomeUsuario}` : ''}!{' '}
@@ -273,19 +273,19 @@ function DashboardContent() {
           <SkeletonGrid
             cards={4}
             cardClassName="h-24"
-            gridClassName="grid grid-cols-1 gap-4 @xl:grid-cols-2 @4xl:grid-cols-4"
+            gridClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
           />
           <SkeletonGrid
             cards={4}
             cardClassName="h-56"
-            gridClassName="grid grid-cols-1 gap-4 @3xl:grid-cols-2"
+            gridClassName="grid grid-cols-1 gap-4 lg:grid-cols-2"
           />
         </>
       )}
 
       {analise && (
         <>
-          <div className="grid grid-cols-1 gap-4 @xl:grid-cols-2 @4xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               icon={Wallet}
               label="Receita projetada"
@@ -308,12 +308,12 @@ function DashboardContent() {
               icon={XCircle}
               label="Aulas canceladas"
               value={String(analise.canceladas)}
-              hint="sem remarcação · inclui faltas"
+              hint="inclui faltas"
               tone={analise.canceladas > 0 ? 'negative' : 'default'}
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 @3xl:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <SecaoAnalise titulo="Receita por aluno" historia={historias?.historiaAlunos ?? null}>
               {analise.rankingAlunos.length === 0 ? (
                 <p className="text-sm text-muted">Nenhuma aula no período.</p>
