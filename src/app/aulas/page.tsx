@@ -14,14 +14,22 @@ import {
   Undo2,
   Maximize2,
   X,
+  MessageCircle,
+  Check,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { AuthGuard } from '@/components/auth-guard'
 import { Skeleton } from '@/components/skeleton'
 import { ValorMonetario } from '@/components/valor-monetario'
 import { fmtISO } from '@/components/periodo-selector'
+import { linkWhatsApp, mensagemConfirmacao } from '@/lib/whatsapp'
 import { AulaForm } from './aula-form'
-import { atualizarStatusAula, reagendarAula, type StatusAula } from './actions'
+import {
+  atualizarStatusAula,
+  reagendarAula,
+  registrarConfirmacao,
+  type StatusAula,
+} from './actions'
 
 type Aluno = { id: string; nome: string }
 
@@ -33,8 +41,9 @@ type AulaComAluno = {
   status: StatusAula
   valor: number | null
   observacoes: string | null
+  confirmacao_enviada_em: string | null
   // PostgREST retorna objeto (relação N:1); cast manual por falta de tipos gerados.
-  aluno: { nome: string } | null
+  aluno: { nome: string; telefone: string | null } | null
 }
 
 const statusLabel: Record<StatusAula, string> = {
@@ -216,6 +225,122 @@ function AcoesStatus({
         <XCircle size={13} /> Cancelar
       </button>
     </>
+  )
+}
+
+function formatarDataHora(iso: string) {
+  return new Date(iso).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function BotaoConfirmarWhatsApp({
+  aula,
+  onChange,
+}: {
+  aula: AulaComAluno
+  onChange: () => void
+}) {
+  const link = aula.aluno?.telefone
+    ? linkWhatsApp(aula.aluno.telefone, mensagemConfirmacao(aula))
+    : null
+
+  if (aula.status !== 'agendada') return null
+
+  if (!link) {
+    return (
+      <span
+        title="Cadastre o telefone do aluno (com DDD) para confirmar pelo WhatsApp"
+        className="rounded-full px-2 py-1 text-xs text-muted/60"
+      >
+        sem telefone
+      </span>
+    )
+  }
+
+  const jaEnviada = Boolean(aula.confirmacao_enviada_em)
+
+  async function enviar() {
+    window.open(link!, '_blank', 'noopener')
+    await registrarConfirmacao(aula.id)
+    onChange()
+  }
+
+  return (
+    <button
+      onClick={enviar}
+      title={
+        jaEnviada
+          ? `Confirmação enviada em ${formatarDataHora(aula.confirmacao_enviada_em!)} — reenviar`
+          : 'Enviar confirmação pelo WhatsApp'
+      }
+      className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs transition-colors ${
+        jaEnviada
+          ? 'bg-primary-light text-primary-dark hover:bg-primary-accent/40'
+          : 'text-muted hover:bg-primary-light hover:text-primary-dark'
+      }`}
+    >
+      {jaEnviada ? <Check size={13} /> : <MessageCircle size={13} />}
+      {jaEnviada ? 'Confirmada' : 'Confirmar'}
+    </button>
+  )
+}
+
+function CentralConfirmacoes({
+  aulas,
+  onChange,
+}: {
+  aulas: AulaComAluno[]
+  onChange: () => void
+}) {
+  const amanha = useMemo(() => {
+    const d = new Date()
+    d.setDate(d.getDate() + 1)
+    return fmtISO(d)
+  }, [])
+
+  const deAmanha = useMemo(
+    () =>
+      aulas
+        .filter((a) => a.data === amanha && a.status === 'agendada')
+        .sort((a, b) => a.hora_inicio.localeCompare(b.hora_inicio)),
+    [aulas, amanha]
+  )
+
+  if (deAmanha.length === 0) return null
+
+  const confirmadas = deAmanha.filter((a) => a.confirmacao_enviada_em).length
+  const historia =
+    confirmadas === deAmanha.length
+      ? 'Todas confirmadas — amanhã está garantido! ✅'
+      : `${deAmanha.length} ${deAmanha.length === 1 ? 'aula' : 'aulas'} amanhã · ${confirmadas} ${confirmadas === 1 ? 'confirmada' : 'confirmadas'}.`
+
+  return (
+    <section className="card-shadow rounded-2xl border border-primary/30 bg-primary-light/40 p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <MessageCircle size={16} className="text-primary" />
+        <h2 className="text-sm font-semibold text-foreground">Confirmações de amanhã</h2>
+      </div>
+      <p className="mb-3 text-xs text-muted">{historia}</p>
+      <ul className="flex flex-col gap-1.5">
+        {deAmanha.map((aula) => (
+          <li
+            key={aula.id}
+            className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface px-3 py-2"
+          >
+            <span className="text-sm text-foreground">
+              <span className="font-medium tabular-nums">{aula.hora_inicio.slice(0, 5)}</span>
+              {' · '}
+              {aula.aluno?.nome ?? 'Aluno removido'}
+            </span>
+            <BotaoConfirmarWhatsApp aula={aula} onChange={onChange} />
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }
 
@@ -448,6 +573,7 @@ function ItemAula({ aula, onChange }: { aula: AulaComAluno; onChange: () => void
             {statusLabel[aula.status]}
           </span>
           <div className="flex gap-1">
+            <BotaoConfirmarWhatsApp aula={aula} onChange={onChange} />
             {aula.status === 'agendada' && (
               <button
                 onClick={() => setReagendando((v) => !v)}
@@ -567,7 +693,9 @@ function AulasContent() {
     const supabase = createClient()
     supabase
       .from('aulas')
-      .select('id, data, hora_inicio, hora_fim, status, valor, observacoes, aluno:alunos(nome)')
+      .select(
+        'id, data, hora_inicio, hora_fim, status, valor, observacoes, confirmacao_enviada_em, aluno:alunos(nome, telefone)'
+      )
       .order('data')
       .order('hora_inicio')
       .then(({ data, error }) => {
@@ -688,6 +816,8 @@ function AulasContent() {
       )}
 
       {aulas === null && !erroAulas && <Skeleton className="h-96" />}
+
+      {aulas !== null && <CentralConfirmacoes aulas={aulas} onChange={fetchAulas} />}
 
       {aulas !== null &&
         (visao === 'calendario' ? (

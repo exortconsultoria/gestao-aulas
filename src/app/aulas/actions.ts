@@ -53,3 +53,11 @@ export async function reagendarAula(
   const supabase = createClient()
   return supabase.from('aulas').update(dados).eq('id', id)
 }
+
+export async function registrarConfirmacao(id: string) {
+  const supabase = createClient()
+  return supabase
+    .from('aulas')
+    .update({ confirmacao_enviada_em: new Date().toISOString() })
+    .eq('id', id)
+}
