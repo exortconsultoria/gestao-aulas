@@ -20,7 +20,7 @@ function AlunosContent() {
     supabase
       .from('alunos')
       .select(
-        'id, nome, email, telefone, data_nascimento, bairro, tipo_cobranca, valor_mensalidade, dia_vencimento, observacoes, ativo'
+        'id, nome, email, telefone, telefone_responsavel, data_nascimento, bairro, tipo_cobranca, valor_mensalidade, dia_vencimento, observacoes, ativo'
       )
       .order('nome')
       .then(({ data, error }) => {
@@ -164,6 +164,11 @@ function AlunosContent() {
                 {aluno.telefone && (
                   <span className="flex items-center gap-1.5">
                     <Phone size={12} /> {aluno.telefone}
+                  </span>
+                )}
+                {aluno.telefone_responsavel && (
+                  <span className="flex items-center gap-1.5">
+                    <Phone size={12} /> {aluno.telefone_responsavel} (responsável)
                   </span>
                 )}
                 {aluno.bairro && (

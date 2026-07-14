@@ -24,6 +24,7 @@ export async function criarAluno(
     nome,
     email: formData.get('email')?.toString() || null,
     telefone: formData.get('telefone')?.toString() || null,
+    telefone_responsavel: formData.get('telefone_responsavel')?.toString() || null,
     data_nascimento: formData.get('data_nascimento')?.toString() || null,
     bairro: formData.get('bairro')?.toString().trim() || null,
     tipo_cobranca: tipoCobranca,
@@ -65,6 +66,7 @@ export async function atualizarAluno(
       nome,
       email: formData.get('email')?.toString() || null,
       telefone: formData.get('telefone')?.toString() || null,
+      telefone_responsavel: formData.get('telefone_responsavel')?.toString() || null,
       data_nascimento: formData.get('data_nascimento')?.toString() || null,
       bairro: formData.get('bairro')?.toString().trim() || null,
       tipo_cobranca: tipoCobranca,
@@ -82,6 +84,12 @@ export async function atualizarAluno(
   }
 
   return { success: true, submissionId: prevState.submissionId + 1 }
+}
+
+/** Cadastro rápido de telefone a partir da central de confirmações. */
+export async function salvarTelefoneAluno(id: string, telefone: string) {
+  const supabase = createClient()
+  return supabase.from('alunos').update({ telefone }).eq('id', id)
 }
 
 export async function excluirAluno(id: string) {

@@ -30,6 +30,7 @@ import {
   registrarConfirmacao,
   type StatusAula,
 } from './actions'
+import { salvarTelefoneAluno } from '../alunos/actions'
 
 type Aluno = { id: string; nome: string }
 
@@ -43,7 +44,12 @@ type AulaComAluno = {
   observacoes: string | null
   confirmacao_enviada_em: string | null
   // PostgREST retorna objeto (relação N:1); cast manual por falta de tipos gerados.
-  aluno: { nome: string; telefone: string | null } | null
+  aluno: {
+    id: string
+    nome: string
+    telefone: string | null
+    telefone_responsavel: string | null
+  } | null
 }
 
 const statusLabel: Record<StatusAula, string> = {
@@ -244,48 +250,129 @@ function BotaoConfirmarWhatsApp({
   aula: AulaComAluno
   onChange: () => void
 }) {
-  const link = aula.aluno?.telefone
-    ? linkWhatsApp(aula.aluno.telefone, mensagemConfirmacao(aula))
-    : null
+  const [escolhendo, setEscolhendo] = useState(false)
+  const [cadastrando, setCadastrando] = useState(false)
+  const [novoTelefone, setNovoTelefone] = useState('')
+  const [salvando, setSalvando] = useState(false)
 
   if (aula.status !== 'agendada') return null
 
-  if (!link) {
-    return (
-      <span
-        title="Cadastre o telefone do aluno (com DDD) para confirmar pelo WhatsApp"
-        className="rounded-full px-2 py-1 text-xs text-muted/60"
-      >
-        sem telefone
-      </span>
-    )
-  }
+  const mensagem = mensagemConfirmacao(aula)
+  const destinos: { rotulo: string; link: string }[] = []
+  const linkAluno = aula.aluno?.telefone ? linkWhatsApp(aula.aluno.telefone, mensagem) : null
+  const linkResponsavel = aula.aluno?.telefone_responsavel
+    ? linkWhatsApp(aula.aluno.telefone_responsavel, mensagem)
+    : null
+  if (linkAluno) destinos.push({ rotulo: 'Aluno', link: linkAluno })
+  if (linkResponsavel) destinos.push({ rotulo: 'Responsável', link: linkResponsavel })
 
   const jaEnviada = Boolean(aula.confirmacao_enviada_em)
 
-  async function enviar() {
-    window.open(link!, '_blank', 'noopener')
+  async function enviar(link: string) {
+    window.open(link, '_blank', 'noopener')
+    setEscolhendo(false)
     await registrarConfirmacao(aula.id)
     onChange()
   }
 
+  async function salvarTelefone() {
+    const telefone = novoTelefone.trim()
+    if (!telefone || !aula.aluno) return
+    setSalvando(true)
+    await salvarTelefoneAluno(aula.aluno.id, telefone)
+    setSalvando(false)
+    setCadastrando(false)
+    setNovoTelefone('')
+    onChange()
+  }
+
+  // Sem nenhum telefone válido: oferece cadastro rápido ali mesmo.
+  if (destinos.length === 0) {
+    return (
+      <div className="relative">
+        <button
+          onClick={() => setCadastrando((v) => !v)}
+          title="Nenhum telefone cadastrado — cadastrar agora"
+          className="flex items-center gap-1 rounded-full px-2 py-1 text-xs text-muted transition-colors hover:bg-primary-light hover:text-primary-dark"
+        >
+          <MessageCircle size={13} /> Cadastrar telefone
+        </button>
+        {cadastrando && (
+          <>
+            <div className="fixed inset-0 z-20" onClick={() => setCadastrando(false)} />
+            <div className="card-shadow absolute right-0 top-full z-30 mt-1 flex w-60 flex-col gap-2 rounded-xl border border-border bg-surface p-3">
+              <span className="text-xs font-medium text-foreground">
+                Telefone do aluno (com DDD)
+              </span>
+              <input
+                type="tel"
+                value={novoTelefone}
+                onChange={(e) => setNovoTelefone(e.target.value)}
+                placeholder="(81) 99999-9999"
+                autoFocus
+                className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground outline-none focus:border-primary"
+              />
+              <button
+                onClick={salvarTelefone}
+                disabled={salvando || !novoTelefone.trim()}
+                className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-contrast transition-colors hover:bg-primary-dark disabled:opacity-50"
+              >
+                {salvando ? 'Salvando...' : 'Salvar'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    )
+  }
+
+  function aoClicar() {
+    if (destinos.length === 1) {
+      void enviar(destinos[0].link)
+    } else {
+      setEscolhendo((v) => !v)
+    }
+  }
+
   return (
-    <button
-      onClick={enviar}
-      title={
-        jaEnviada
-          ? `Confirmação enviada em ${formatarDataHora(aula.confirmacao_enviada_em!)} — reenviar`
-          : 'Enviar confirmação pelo WhatsApp'
-      }
-      className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs transition-colors ${
-        jaEnviada
-          ? 'bg-primary-light text-primary-dark hover:bg-primary-accent/40'
-          : 'text-muted hover:bg-primary-light hover:text-primary-dark'
-      }`}
-    >
-      {jaEnviada ? <Check size={13} /> : <MessageCircle size={13} />}
-      {jaEnviada ? 'Confirmada' : 'Confirmar'}
-    </button>
+    <div className="relative">
+      <button
+        onClick={aoClicar}
+        title={
+          jaEnviada
+            ? `Confirmação enviada em ${formatarDataHora(aula.confirmacao_enviada_em!)} — reenviar`
+            : 'Enviar confirmação pelo WhatsApp'
+        }
+        className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs transition-colors ${
+          jaEnviada
+            ? 'bg-primary-light text-primary-dark hover:bg-primary-accent/40'
+            : 'text-muted hover:bg-primary-light hover:text-primary-dark'
+        }`}
+      >
+        {jaEnviada ? <Check size={13} /> : <MessageCircle size={13} />}
+        {jaEnviada ? 'Confirmada' : 'Confirmar'}
+      </button>
+
+      {escolhendo && (
+        <>
+          <div className="fixed inset-0 z-20" onClick={() => setEscolhendo(false)} />
+          <div className="card-shadow absolute right-0 top-full z-30 mt-1 flex w-44 flex-col gap-0.5 rounded-xl border border-border bg-surface p-1.5">
+            <span className="px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-muted">
+              Enviar para
+            </span>
+            {destinos.map((destino) => (
+              <button
+                key={destino.rotulo}
+                onClick={() => void enviar(destino.link)}
+                className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-foreground transition-colors hover:bg-primary-light hover:text-primary-dark"
+              >
+                <MessageCircle size={12} /> {destino.rotulo}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   )
 }
 
@@ -694,7 +781,7 @@ function AulasContent() {
     supabase
       .from('aulas')
       .select(
-        'id, data, hora_inicio, hora_fim, status, valor, observacoes, confirmacao_enviada_em, aluno:alunos(nome, telefone)'
+        'id, data, hora_inicio, hora_fim, status, valor, observacoes, confirmacao_enviada_em, aluno:alunos(id, nome, telefone, telefone_responsavel)'
       )
       .order('data')
       .order('hora_inicio')

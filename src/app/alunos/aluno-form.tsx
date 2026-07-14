@@ -14,6 +14,7 @@ export type AlunoEditavel = {
   nome: string
   email: string | null
   telefone: string | null
+  telefone_responsavel: string | null
   data_nascimento: string | null
   bairro: string | null
   tipo_cobranca: string
@@ -165,10 +166,25 @@ export function AlunoForm({
             id="telefone"
             name="telefone"
             type="tel"
+            placeholder="(DDD) 99999-9999"
             defaultValue={aluno?.telefone ?? undefined}
             className={inputClass}
           />
         </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="telefone_responsavel" className={labelClass}>
+          Telefone do responsável
+        </label>
+        <input
+          id="telefone_responsavel"
+          name="telefone_responsavel"
+          type="tel"
+          placeholder="(DDD) 99999-9999 — usado na confirmação quando o aluno não tem telefone"
+          defaultValue={aluno?.telefone_responsavel ?? undefined}
+          className={inputClass}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
