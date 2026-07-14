@@ -15,6 +15,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Gestão de Aulas",
   description: "Organize alunos, agenda e finanças das suas aulas particulares.",
+  // Faz o iOS abrir o app em tela cheia (sem a barra do Safari) quando
+  // adicionado à tela de início.
+  appleWebApp: {
+    capable: true,
+    title: "Gestão de Aulas",
+    statusBarStyle: "default",
+  },
 };
 
 export default function RootLayout({

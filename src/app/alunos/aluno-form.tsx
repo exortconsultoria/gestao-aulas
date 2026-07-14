@@ -1,7 +1,7 @@
 'use client'
 
-import { useActionState, useEffect, useRef, useState } from 'react'
-import { criarAluno, type CriarAlunoState } from './actions'
+import { useActionState, useEffect, useMemo, useRef, useState } from 'react'
+import { criarAluno, atualizarAluno, type CriarAlunoState } from './actions'
 
 const initialState: CriarAlunoState = { submissionId: 0 }
 
@@ -9,8 +9,30 @@ const inputClass =
   'w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary-light'
 const labelClass = 'text-sm font-medium text-foreground'
 
-function TipoCobrancaFields() {
-  const [tipoCobranca, setTipoCobranca] = useState<'por_aula' | 'mensalista'>('por_aula')
+export type AlunoEditavel = {
+  id: string
+  nome: string
+  email: string | null
+  telefone: string | null
+  data_nascimento: string | null
+  bairro: string | null
+  tipo_cobranca: string
+  valor_mensalidade: number | null
+  dia_vencimento: number | null
+  observacoes: string | null
+  ativo: boolean
+}
+
+function TipoCobrancaFields({
+  inicial = 'por_aula',
+  valorMensalidade,
+  diaVencimento,
+}: {
+  inicial?: 'por_aula' | 'mensalista'
+  valorMensalidade?: number | null
+  diaVencimento?: number | null
+}) {
+  const [tipoCobranca, setTipoCobranca] = useState<'por_aula' | 'mensalista'>(inicial)
 
   return (
     <>
@@ -58,6 +80,7 @@ function TipoCobrancaFields() {
               type="number"
               step="0.01"
               min="0"
+              defaultValue={valorMensalidade ?? undefined}
               className={inputClass}
             />
           </div>
@@ -71,6 +94,7 @@ function TipoCobrancaFields() {
               type="number"
               min="1"
               max="31"
+              defaultValue={diaVencimento ?? undefined}
               className={inputClass}
             />
           </div>
@@ -80,15 +104,29 @@ function TipoCobrancaFields() {
   )
 }
 
-export function AlunoForm() {
-  const [state, formAction, pending] = useActionState(criarAluno, initialState)
+export function AlunoForm({
+  aluno,
+  onSaved,
+}: {
+  aluno?: AlunoEditavel
+  onSaved?: () => void
+}) {
+  const action = useMemo(
+    () => (aluno ? atualizarAluno.bind(null, aluno.id) : criarAluno),
+    [aluno]
+  )
+  const [state, formAction, pending] = useActionState(action, initialState)
   const formRef = useRef<HTMLFormElement>(null)
+  const editando = Boolean(aluno)
 
   useEffect(() => {
-    if (state.success) {
+    if (!state.success) return
+    if (editando) {
+      onSaved?.()
+    } else {
       formRef.current?.reset()
     }
-  }, [state.success])
+  }, [state.success, state.submissionId, editando, onSaved])
 
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-4">
@@ -96,7 +134,14 @@ export function AlunoForm() {
         <label htmlFor="nome" className={labelClass}>
           Nome *
         </label>
-        <input id="nome" name="nome" type="text" required className={inputClass} />
+        <input
+          id="nome"
+          name="nome"
+          type="text"
+          required
+          defaultValue={aluno?.nome}
+          className={inputClass}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -104,13 +149,25 @@ export function AlunoForm() {
           <label htmlFor="email" className={labelClass}>
             E-mail
           </label>
-          <input id="email" name="email" type="email" className={inputClass} />
+          <input
+            id="email"
+            name="email"
+            type="email"
+            defaultValue={aluno?.email ?? undefined}
+            className={inputClass}
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="telefone" className={labelClass}>
             Telefone
           </label>
-          <input id="telefone" name="telefone" type="tel" className={inputClass} />
+          <input
+            id="telefone"
+            name="telefone"
+            type="tel"
+            defaultValue={aluno?.telefone ?? undefined}
+            className={inputClass}
+          />
         </div>
       </div>
 
@@ -123,6 +180,7 @@ export function AlunoForm() {
             id="data_nascimento"
             name="data_nascimento"
             type="date"
+            defaultValue={aluno?.data_nascimento ?? undefined}
             className={inputClass}
           />
         </div>
@@ -130,23 +188,52 @@ export function AlunoForm() {
           <label htmlFor="bairro" className={labelClass}>
             Bairro
           </label>
-          <input id="bairro" name="bairro" type="text" className={inputClass} />
+          <input
+            id="bairro"
+            name="bairro"
+            type="text"
+            defaultValue={aluno?.bairro ?? undefined}
+            className={inputClass}
+          />
         </div>
       </div>
 
-      <TipoCobrancaFields key={state.submissionId} />
+      <TipoCobrancaFields
+        key={state.submissionId}
+        inicial={aluno?.tipo_cobranca === 'mensalista' ? 'mensalista' : 'por_aula'}
+        valorMensalidade={aluno?.valor_mensalidade}
+        diaVencimento={aluno?.dia_vencimento}
+      />
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="observacoes" className={labelClass}>
           Observações
         </label>
-        <textarea id="observacoes" name="observacoes" rows={3} className={inputClass} />
+        <textarea
+          id="observacoes"
+          name="observacoes"
+          rows={3}
+          defaultValue={aluno?.observacoes ?? undefined}
+          className={inputClass}
+        />
       </div>
+
+      {editando && (
+        <label className="flex items-center gap-2 text-sm text-foreground">
+          <input
+            type="checkbox"
+            name="ativo"
+            defaultChecked={aluno?.ativo}
+            className="accent-primary"
+          />
+          Aluno ativo (aparece na Agenda para marcar aulas)
+        </label>
+      )}
 
       {state.error && (
         <p className="rounded-lg bg-danger-light px-3 py-2 text-sm text-danger">{state.error}</p>
       )}
-      {state.success && (
+      {state.success && !editando && (
         <p className="rounded-lg bg-primary-light px-3 py-2 text-sm text-primary-dark">
           Aluno cadastrado com sucesso!
         </p>
@@ -157,7 +244,7 @@ export function AlunoForm() {
         disabled={pending}
         className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-contrast transition-colors hover:bg-primary-dark disabled:opacity-50"
       >
-        {pending ? 'Salvando...' : 'Cadastrar aluno'}
+        {pending ? 'Salvando...' : editando ? 'Salvar alterações' : 'Cadastrar aluno'}
       </button>
     </form>
   )
