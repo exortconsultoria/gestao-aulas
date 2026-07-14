@@ -12,6 +12,8 @@ import {
   XCircle,
   UserX,
   Undo2,
+  Maximize2,
+  X,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { AuthGuard } from '@/components/auth-guard'
@@ -30,6 +32,7 @@ type AulaComAluno = {
   hora_fim: string | null
   status: StatusAula
   valor: number | null
+  observacoes: string | null
   // PostgREST retorna objeto (relação N:1); cast manual por falta de tipos gerados.
   aluno: { nome: string } | null
 }
@@ -220,10 +223,16 @@ function CalendarioMensal({
   aulas,
   mesAncora,
   onNavegar,
+  onSelecionarDia,
+  mostrarNomes = true,
+  telaCheia = false,
 }: {
   aulas: AulaComAluno[]
   mesAncora: Date
   onNavegar: (delta: number | 'hoje') => void
+  onSelecionarDia: (data: string) => void
+  mostrarNomes?: boolean
+  telaCheia?: boolean
 }) {
   const ano = mesAncora.getFullYear()
   const mes = mesAncora.getMonth()
@@ -297,20 +306,38 @@ function CalendarioMensal({
         ))}
 
         {celulas.map((data, indice) => {
+          const alturaCelula = telaCheia ? 'min-h-24 sm:min-h-32' : 'min-h-20'
+
           if (!data) {
-            return <div key={`vazio-${indice}`} className="min-h-20 rounded-lg" />
+            return <div key={`vazio-${indice}`} className={`${alturaCelula} rounded-lg`} />
           }
 
           const doDia = aulasPorDia.get(data) ?? []
-          const visiveis = doDia.slice(0, 3)
+          const visiveis = doDia.slice(0, telaCheia ? 5 : 3)
           const extras = doDia.length - visiveis.length
           const ehHoje = data === hoje
+          const temAulas = doDia.length > 0
 
           return (
             <div
               key={data}
-              className={`flex min-h-20 flex-col gap-1 rounded-lg border p-1.5 ${
+              role={temAulas ? 'button' : undefined}
+              tabIndex={temAulas ? 0 : undefined}
+              onClick={temAulas ? () => onSelecionarDia(data) : undefined}
+              onKeyDown={
+                temAulas
+                  ? (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') onSelecionarDia(data)
+                    }
+                  : undefined
+              }
+              title={temAulas ? 'Ver detalhes das aulas deste dia' : undefined}
+              className={`flex ${alturaCelula} flex-col gap-1 rounded-lg border p-1.5 ${
                 ehHoje ? 'border-primary bg-primary-light/40' : 'border-border bg-background/60'
+              } ${
+                temAulas
+                  ? 'cursor-pointer transition-shadow hover:ring-2 hover:ring-primary-accent focus:outline-none focus:ring-2 focus:ring-primary'
+                  : ''
               }`}
             >
               <span
@@ -324,9 +351,12 @@ function CalendarioMensal({
                 <span
                   key={aula.id}
                   title={`${aula.hora_inicio.slice(0, 5)} — ${aula.aluno?.nome ?? 'Aluno removido'} (${statusLabel[aula.status]})`}
-                  className={`truncate rounded px-1 py-0.5 text-[10px] font-medium leading-tight ${chipPorStatus[aula.status]}`}
+                  className={`truncate rounded px-1 py-0.5 font-medium leading-tight ${
+                    telaCheia ? 'text-xs' : 'text-[10px]'
+                  } ${chipPorStatus[aula.status]}`}
                 >
-                  {aula.hora_inicio.slice(0, 5)} {aula.aluno?.nome ?? '—'}
+                  {aula.hora_inicio.slice(0, 5)}
+                  {mostrarNomes && ` ${aula.aluno?.nome ?? '—'}`}
                 </span>
               ))}
               {extras > 0 && (
@@ -335,6 +365,53 @@ function CalendarioMensal({
             </div>
           )
         })}
+      </div>
+
+      <p className="mt-3 text-center text-[11px] text-muted">
+        Toque em um dia com aulas para ver os detalhes.
+      </p>
+    </div>
+  )
+}
+
+function DetalhesDia({
+  data,
+  aulas,
+  onChange,
+  onClose,
+}: {
+  data: string
+  aulas: AulaComAluno[]
+  onChange: () => void
+  onClose: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-foreground/40" onClick={onClose} />
+      <div className="card-shadow relative flex max-h-[85vh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-2xl border border-border bg-surface p-6">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="font-semibold capitalize text-foreground">{nomeDataLonga(data)}</h2>
+            <p className="mt-0.5 text-xs text-muted">
+              {aulas.length === 0
+                ? 'Nenhuma aula neste dia.'
+                : `${aulas.length} ${aulas.length === 1 ? 'aula' : 'aulas'} neste dia.`}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            title="Fechar detalhes"
+            className="rounded-full p-1.5 text-muted transition-colors hover:bg-surface-muted hover:text-foreground"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <ul className="flex flex-col gap-2">
+          {aulas.map((aula) => (
+            <ItemAula key={aula.id} aula={aula} onChange={onChange} />
+          ))}
+        </ul>
       </div>
     </div>
   )
@@ -360,6 +437,9 @@ function ItemAula({ aula, onChange }: { aula: AulaComAluno; onChange: () => void
               </>
             )}
           </span>
+          {aula.observacoes && (
+            <span className="mt-0.5 text-xs italic text-muted">{aula.observacoes}</span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <span
@@ -455,16 +535,39 @@ function AulasContent() {
   const [erroAulas, setErroAulas] = useState<string | null>(null)
   const [mostrarForm, setMostrarForm] = useState(false)
   const [visao, setVisao] = useState<'calendario' | 'lista'>('calendario')
+  const [diaSelecionado, setDiaSelecionado] = useState<string | null>(null)
+  const [telaCheia, setTelaCheia] = useState(false)
+  const [mostrarNomes, setMostrarNomes] = useState(false)
   const [mesAncora, setMesAncora] = useState(() => {
     const agora = new Date()
     return new Date(agora.getFullYear(), agora.getMonth(), 1)
   })
 
+  // Se o usuário sair da tela cheia nativa (ex.: tecla Esc), fecha o overlay.
+  useEffect(() => {
+    function aoMudarFullscreen() {
+      if (!document.fullscreenElement) setTelaCheia(false)
+    }
+    document.addEventListener('fullscreenchange', aoMudarFullscreen)
+    return () => document.removeEventListener('fullscreenchange', aoMudarFullscreen)
+  }, [])
+
+  function abrirTelaCheia() {
+    setTelaCheia(true)
+    setMostrarNomes(false) // privacidade: ao exibir para um aluno, nomes ocultos
+    document.documentElement.requestFullscreen?.().catch(() => {})
+  }
+
+  function fecharTelaCheia() {
+    setTelaCheia(false)
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {})
+  }
+
   const fetchAulas = useCallback(() => {
     const supabase = createClient()
     supabase
       .from('aulas')
-      .select('id, data, hora_inicio, hora_fim, status, valor, aluno:alunos(nome)')
+      .select('id, data, hora_inicio, hora_fim, status, valor, observacoes, aluno:alunos(nome)')
       .order('data')
       .order('hora_inicio')
       .then(({ data, error }) => {
@@ -541,6 +644,15 @@ function AulasContent() {
               <List size={15} />
             </button>
           </div>
+          {visao === 'calendario' && (
+            <button
+              onClick={abrirTelaCheia}
+              title="Calendário em tela cheia (para mostrar disponibilidade)"
+              className="rounded-full border border-border bg-surface p-2 text-muted transition-colors hover:border-primary hover:text-primary"
+            >
+              <Maximize2 size={15} />
+            </button>
+          )}
           <button
             onClick={() => setMostrarForm((v) => !v)}
             className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-contrast transition-colors hover:bg-primary-dark"
@@ -579,10 +691,55 @@ function AulasContent() {
 
       {aulas !== null &&
         (visao === 'calendario' ? (
-          <CalendarioMensal aulas={aulas} mesAncora={mesAncora} onNavegar={navegarMes} />
+          <CalendarioMensal
+            aulas={aulas}
+            mesAncora={mesAncora}
+            onNavegar={navegarMes}
+            onSelecionarDia={setDiaSelecionado}
+          />
         ) : (
           <ListaAulas aulas={aulas} onChange={fetchAulas} />
         ))}
+
+      {telaCheia && aulas !== null && (
+        <div className="fixed inset-0 z-40 flex flex-col gap-4 overflow-y-auto bg-background p-4 sm:p-8">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-foreground">Disponibilidade</h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setMostrarNomes((v) => !v)}
+                className="rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-primary hover:text-primary"
+              >
+                {mostrarNomes ? 'Ocultar nomes' : 'Mostrar nomes'}
+              </button>
+              <button
+                onClick={fecharTelaCheia}
+                title="Sair da tela cheia"
+                className="rounded-full border border-border bg-surface p-2 text-muted transition-colors hover:border-danger hover:text-danger"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+          <CalendarioMensal
+            aulas={aulas}
+            mesAncora={mesAncora}
+            onNavegar={navegarMes}
+            onSelecionarDia={setDiaSelecionado}
+            mostrarNomes={mostrarNomes}
+            telaCheia
+          />
+        </div>
+      )}
+
+      {diaSelecionado && aulas !== null && (
+        <DetalhesDia
+          data={diaSelecionado}
+          aulas={aulas.filter((a) => a.data === diaSelecionado)}
+          onChange={fetchAulas}
+          onClose={() => setDiaSelecionado(null)}
+        />
+      )}
     </main>
   )
 }
