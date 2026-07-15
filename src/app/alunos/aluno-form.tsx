@@ -17,6 +17,7 @@ export type AlunoEditavel = {
   telefone_responsavel: string | null
   data_nascimento: string | null
   bairro: string | null
+  origem: string
   tipo_cobranca: string
   valor_mensalidade: number | null
   dia_vencimento: number | null
@@ -213,6 +214,32 @@ export function AlunoForm({
           />
         </div>
       </div>
+
+      <fieldset className="flex flex-col gap-2">
+        <legend className={labelClass}>Origem do aluno</legend>
+        <div className="flex gap-4 text-sm text-foreground">
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="origem"
+              value="sophia"
+              defaultChecked={aluno?.origem !== 'andre'}
+              className="accent-primary"
+            />
+            Sophia (própria)
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="origem"
+              value="andre"
+              defaultChecked={aluno?.origem === 'andre'}
+              className="accent-primary"
+            />
+            Indicação do André
+          </label>
+        </div>
+      </fieldset>
 
       <TipoCobrancaFields
         key={state.submissionId}

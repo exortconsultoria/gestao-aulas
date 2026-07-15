@@ -20,7 +20,7 @@ function AlunosContent() {
     supabase
       .from('alunos')
       .select(
-        'id, nome, email, telefone, telefone_responsavel, data_nascimento, bairro, tipo_cobranca, valor_mensalidade, dia_vencimento, observacoes, ativo'
+        'id, nome, email, telefone, telefone_responsavel, data_nascimento, bairro, origem, tipo_cobranca, valor_mensalidade, dia_vencimento, observacoes, ativo'
       )
       .order('nome')
       .then(({ data, error }) => {
@@ -133,6 +133,14 @@ function AlunosContent() {
               <div className="flex items-start justify-between gap-2">
                 <span className="font-semibold text-foreground">{aluno.nome}</span>
                 <div className="flex shrink-0 items-center gap-1">
+                  {aluno.origem === 'andre' && (
+                    <span
+                      title="Aluno indicado pelo André"
+                      className="mr-1 rounded-full bg-primary-light px-2 py-0.5 text-xs text-primary-dark"
+                    >
+                      via André
+                    </span>
+                  )}
                   {!aluno.ativo && (
                     <span className="mr-1 rounded-full bg-surface-muted px-2 py-0.5 text-xs text-muted">
                       Inativo

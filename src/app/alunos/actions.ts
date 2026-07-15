@@ -27,6 +27,7 @@ export async function criarAluno(
     telefone_responsavel: formData.get('telefone_responsavel')?.toString() || null,
     data_nascimento: formData.get('data_nascimento')?.toString() || null,
     bairro: formData.get('bairro')?.toString().trim() || null,
+    origem: formData.get('origem')?.toString() === 'andre' ? 'andre' : 'sophia',
     tipo_cobranca: tipoCobranca,
     valor_mensalidade:
       tipoCobranca === 'mensalista' && valorMensalidade ? Number(valorMensalidade) : null,
@@ -69,6 +70,7 @@ export async function atualizarAluno(
       telefone_responsavel: formData.get('telefone_responsavel')?.toString() || null,
       data_nascimento: formData.get('data_nascimento')?.toString() || null,
       bairro: formData.get('bairro')?.toString().trim() || null,
+      origem: formData.get('origem')?.toString() === 'andre' ? 'andre' : 'sophia',
       tipo_cobranca: tipoCobranca,
       valor_mensalidade:
         tipoCobranca === 'mensalista' && valorMensalidade ? Number(valorMensalidade) : null,
