@@ -8,6 +8,7 @@ import {
   Home,
   Users,
   CalendarDays,
+  HandCoins,
   Wallet,
   Eye,
   EyeOff,
@@ -20,6 +21,7 @@ const navItems = [
   { href: '/', label: 'Início', icon: Home },
   { href: '/alunos', label: 'Alunos', icon: Users },
   { href: '/aulas', label: 'Agenda', icon: CalendarDays },
+  { href: '/recebimentos', label: 'Recebimentos', icon: HandCoins },
   { href: '/financeiro', label: 'Financeiro', icon: Wallet },
 ]
 
